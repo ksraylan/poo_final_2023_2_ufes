@@ -1,32 +1,42 @@
 package br.ufes.raylanschultz.prog3.projfinal;
 
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
-public class Jogador extends EntidadeComVida implements Atirador {
-    private Array<Arma> armas;
+public class Jogador extends EntidadeDanificavel implements Atirador {
+    private Arma arma;
 
     public Jogador(Sprite[] imagens, Vector2 position, Vector2 hitbox, int vida) {
-        super(imagens, position, hitbox, 0.1f, 1000f, 1000f, vida);
+        super(imagens, position, hitbox, 5f, 1000f, 1000f, vida);
 
-        final var projetilSprite = new Sprite(new Texture("sprites/weapons/laser.png"), 0, 16, 16, 16);
-        armas = new Array<>() {
-            {
-                add(new Arma(0.5f, 10, 1000, new Vector2(0, 0), projetilSprite, new Vector2(16, 16)));
-            }
-        };
+        final Sprite[] projetilSprites = new Sprite[]
+                {
+                        new Sprite(new Texture("sprites/weapons/laser.png"), 0, 16, 16, 16),
+                        new Sprite(new Texture("sprites/weapons/laser.png"), 14, 16, 16, 16)
+                };
+
+        final var som = Gdx.audio.newSound(Gdx.files.internal("sounds/laserSmall_001.ogg"));
+
+        arma = new Arma(0.5f, 10, 1000, new Vector2(0, 0), projetilSprites, new Vector2(16, 16), som);
     }
 
-    public Projetil atirar() {
-        return armas.get(0).atirar(this, Vector2.Y);
+    public Projetil atirar(Vector2 posicaoMouse) {
+        return arma.atirar(this, posicaoMouse.cpy().sub(getPosicao()).nor());
     }
 
     @Override
-    public void atualizacaoDeFrame(float deltaTime) {
-        super.atualizacaoDeFrame(deltaTime);
+    public void atualizarFisica(float deltaTime) {
+        super.atualizarFisica(deltaTime);
+        arma.atualizarFisica(deltaTime);
+    }
+
+    @Override
+    public void atualizarQuadro(float deltaTime) {
         if (this.getVida() > this.getVidaMaxima() / 2) {
             this.setFrameAtual(0);
         } else if (this.getVida() > this.getVidaMaxima() / 4) {
@@ -36,6 +46,5 @@ public class Jogador extends EntidadeComVida implements Atirador {
         } else {
             this.setFrameAtual(3);
         }
-        armas.forEach(arma -> arma.atualizacaoDeFrame(deltaTime));
     }
 }

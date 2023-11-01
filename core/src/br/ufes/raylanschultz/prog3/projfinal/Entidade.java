@@ -50,14 +50,14 @@ public abstract class Entidade {
     public Entidade(Sprite imagem) {
         posicao = new Vector2();
         velocidade = new Vector2();
-        ultimaPosicao = new Vector2();
+        ultimaPosicao = null;
         movimento = new Vector2();
         this.imagens = new Sprite[]{imagem};
     }
     public Entidade(Sprite imagem, Vector2 posicao, Vector2 colisao) {
         this.posicao = posicao;
         velocidade = new Vector2();
-        ultimaPosicao = posicao.cpy();
+        ultimaPosicao = null;
         movimento = new Vector2();
         this.colisao = colisao;
         this.imagens = new Sprite[]{imagem};
@@ -66,7 +66,7 @@ public abstract class Entidade {
     public Entidade(Sprite imagem, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima) {
         this.posicao = posicao;
         velocidade = new Vector2();
-        ultimaPosicao = posicao.cpy();
+        ultimaPosicao = null;
         movimento = new Vector2();
         this.colisao = colisao;
         this.imagens = new Sprite[]{imagem};
@@ -78,7 +78,7 @@ public abstract class Entidade {
     public Entidade(Sprite[] imagens, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima) {
         this.posicao = posicao;
         velocidade = new Vector2();
-        ultimaPosicao = posicao.cpy();
+        ultimaPosicao = null;
         movimento = new Vector2();
         this.colisao = colisao;
         this.imagens = imagens;
@@ -90,7 +90,7 @@ public abstract class Entidade {
     public Entidade(Sprite imagem, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, Vector2 velocidade) {
         this.posicao = posicao;
         this.velocidade = new Vector2();
-        ultimaPosicao = posicao.cpy();
+        ultimaPosicao = null;
         movimento = new Vector2();
         this.colisao = colisao;
         this.imagens = new Sprite[]{imagem};
@@ -103,7 +103,7 @@ public abstract class Entidade {
     public Entidade(Sprite[] imagens, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, Vector2 velocidade) {
         this.posicao = posicao;
         this.velocidade = new Vector2();
-        ultimaPosicao = posicao.cpy();
+        ultimaPosicao = null;
         movimento = new Vector2();
         this.colisao = colisao;
         this.imagens = imagens;
@@ -114,18 +114,21 @@ public abstract class Entidade {
     }
 
     public Vector2 posicaoRenderizada(float interpolation)  {
-        return ultimaPosicao.cpy().lerp(posicao, interpolation);
+        return ultimaPosicao == null ? null : ultimaPosicao.cpy().lerp(posicao, interpolation);
     }
 
-    public void atualizacaoDeFrame(float deltaTime) {
+    public void atualizarFisica(float deltaTime) {
         ultimaPosicao = posicao.cpy();
-        velocidade.add(movimento.cpy().scl(aceleracao * deltaTime));
-        velocidade.scl(1 - atrito);
+        velocidade.add(movimento.cpy().scl(aceleracao * deltaTime * 0.5f));
+        velocidade.scl(1 / (1 + (deltaTime * atrito)));
         if (velocidade.len() > velocidadeMaxima) {
             velocidade.nor().scl(velocidadeMaxima);
         }
-        System.out.println(velocidade);
         posicao.add(velocidade.cpy().scl(deltaTime));
+        velocidade.add(movimento.cpy().scl(aceleracao * deltaTime * 0.5f));
+    }
+
+    public void atualizarQuadro(float deltaTime) {
         atualizarSprite(deltaTime);
     }
 
@@ -162,4 +165,6 @@ public abstract class Entidade {
     public int getFrameAtual() {
         return frameAtual;
     }
+
+    public abstract boolean estaDestruido();
 }

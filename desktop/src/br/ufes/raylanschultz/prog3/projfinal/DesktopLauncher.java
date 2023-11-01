@@ -8,10 +8,10 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
 		config.setForegroundFPS(0);
-		config.useVsync(false);
-		config.setTitle("Projeto Final");
+		config.useVsync(true);
+		config.setTitle("Spaceunes");
 		config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
 		config.setWindowedMode(1280, 720);
-		new Lwjgl3Application(new JogoProjetoFinal(), config);
+		new Lwjgl3Application(new Spaceunes(), config);
 	}
 }
