@@ -7,11 +7,13 @@ public class Projetil extends Entidade {
 
     private final int dano;
     private int resistencia;
+    private final Nave atirador;
 
-    public Projetil(Sprite[] sprites, Vector2 position, Vector2 direcao, float velocidade, Vector2 hitbox, int dano, int resistencia) {
+    public Projetil(Sprite[] sprites, Vector2 position, Vector2 direcao, float velocidade, Vector2 hitbox, int dano, int resistencia, Nave atirador) {
         super(sprites, position, hitbox, 0, 0, 999999, direcao.cpy().scl(velocidade));
         this.dano = dano;
         this.resistencia = resistencia;
+        this.atirador = atirador;
     }
 
     @Override
@@ -25,5 +27,9 @@ public class Projetil extends Entidade {
             return dano;
         }
         return 0;
+    }
+
+    public Nave getAtirador() {
+        return atirador;
     }
 }

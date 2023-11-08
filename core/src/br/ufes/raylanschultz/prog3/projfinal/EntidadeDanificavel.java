@@ -37,6 +37,9 @@ public abstract class EntidadeDanificavel extends Entidade {
             vida -= ((Projetil) entidade).causarDano();
             if (vida < 0) {
                 vida = 0;
+                if (((Projetil) entidade).getAtirador() instanceof Jogador) {
+                    ((Jogador)((Projetil) entidade).getAtirador()).addXp(1);
+                }
             }
         }
     }

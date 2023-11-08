@@ -8,25 +8,20 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
-public class Jogador extends EntidadeDanificavel implements Atirador {
-    private Arma arma;
+public class Jogador extends Nave implements Atirador {
+    private int xp = 0;
+    private int pontos = 0;
+    private int nivel = 1;
+    private boolean trocouArma = false;
 
     public Jogador(Sprite[] imagens, Vector2 position, Vector2 hitbox, int vida) {
-        super(imagens, position, hitbox, 5f, 1000f, 1000f, vida);
+        super(imagens, position, hitbox, 5f, 1000f, 1000f, vida, 200f);
 
-        final Sprite[] projetilSprites = new Sprite[]
-                {
-                        new Sprite(new Texture("sprites/weapons/laser.png"), 0, 16, 16, 16),
-                        new Sprite(new Texture("sprites/weapons/laser.png"), 14, 16, 16, 16)
-                };
-
-        final var som = Gdx.audio.newSound(Gdx.files.internal("sounds/laserSmall_001.ogg"));
-
-        arma = new Arma(0.5f, 10, 1000, new Vector2(0, 0), projetilSprites, new Vector2(16, 16), som);
+        arma = CriadorArmas.gun();
     }
 
     public Projetil atirar(Vector2 posicaoMouse) {
-        return arma.atirar(this, posicaoMouse.cpy().sub(getPosicao()).nor());
+        return arma.atirar(this);
     }
 
     @Override
@@ -46,5 +41,36 @@ public class Jogador extends EntidadeDanificavel implements Atirador {
         } else {
             this.setFrameAtual(3);
         }
+    }
+
+    public void addXp(int xp) {
+        this.xp += xp;
+        final var proximoNivel = 20 * (int) Math.pow(2, this.nivel - 1);
+        if (this.xp >= proximoNivel) {
+            this.xp -= proximoNivel;
+            this.nivel++;
+            this.pontos++;
+        }
+    }
+
+    public boolean querendoTrocarArma() {
+        return true;
+//        return !this.trocouArma && this.pontos > 0;
+    }
+
+    public void trocarArma(Arma armaNova) {
+        if (this.trocouArma || this.pontos == 0) {
+            return;
+        }
+        this.arma = armaNova;
+        this.trocouArma = true;
+    }
+
+    public int getPontos() {
+        return pontos;
+    }
+
+    public int getXp() {
+        return xp;
     }
 }

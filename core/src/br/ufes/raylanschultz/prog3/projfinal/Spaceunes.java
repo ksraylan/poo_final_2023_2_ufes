@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -60,7 +61,11 @@ public class Spaceunes extends ApplicationAdapter {
         cameraDoJogo = new OrthographicCamera();
         cameraDoJogo.setToOrtho(false, LARGURA_JOGO, ALTURA_JOGO);
         gameViewport = new ExtendViewport(LARGURA_JOGO, ALTURA_JOGO, cameraDoJogo);
-        fontePadrao = new BitmapFont();
+        final var generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/game_over.ttf"));
+        final var parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 64;
+
+        fontePadrao = generator.generateFont(parameter);
         Gdx.input.setInputProcessor(new InputAdapter() {
            @Override
            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
@@ -128,8 +133,6 @@ public class Spaceunes extends ApplicationAdapter {
         };
 
         interfaceGraficaFundo = new InterfaceGrafica() {
-
-
             @Override
             public void renderizar(Batch gameBatch, Vector2 posicaoMouse, boolean pressionado) {
                 if (parteAtual >= partes) parteAtual -= partes;
@@ -217,17 +220,17 @@ public class Spaceunes extends ApplicationAdapter {
         }
     }
 
-    public void tickUpdateEntidadeAliada(Entidade entidade, int index) {
+    public void tickUpdateEntidadeAliada(Entidade entidade, int index, Vector2 posicaoMouse) {
+        ((Nave) entidade).setOlharPara(posicaoMouse);
         this.tickUpdateEntidade(entidade, entidadesAliadas, index);
         entidade.checarColisao(entidadesInimigas);
         entidade.checarColisao(projeteisInimigos);
     }
 
     public void tickUpdateEntidadeInimiga(Entidade entidade, int index) {
-        if (entidade instanceof Inimigo) {
-            Projetil projetil = ((Inimigo) entidade).atirar(jogador);
-            if (projetil != null) projeteisInimigos.add(projetil);
-        }
+        ((Inimigo) entidade).setOlharPara(jogador.getPosicao().cpy().add(jogador.getColisao().cpy().scl(0.5f)));
+        Projetil projetil = ((Inimigo) entidade).atirar(jogador);
+        if (projetil != null) projeteisInimigos.add(projetil);
         this.tickUpdateEntidade(entidade, entidadesInimigas, index);
         entidade.checarColisao(entidadesAliadas);
         entidade.checarColisao(projeteisAliados);
@@ -260,9 +263,9 @@ public class Spaceunes extends ApplicationAdapter {
         entidade.checarColisao(entidadesAliadas);
     }
 
-    public void tickUpdate() {
+    public void tickUpdate(Vector2 posicaoMouse) {
         for (int i = 0; i < entidadesAliadas.size; i++) {
-            tickUpdateEntidadeAliada(entidadesAliadas.get(i), i);
+            tickUpdateEntidadeAliada(entidadesAliadas.get(i), i, posicaoMouse);
         }
         for (int i = 0; i < entidadesInimigas.size; i++) {
             tickUpdateEntidadeInimiga(entidadesInimigas.get(i), i);
@@ -280,21 +283,27 @@ public class Spaceunes extends ApplicationAdapter {
         var posicaoRenderizada = entidade.posicaoRenderizada(interpolation);
         if (posicaoRenderizada == null) return;
         entidade.getImagem().setPosition(posicaoRenderizada.x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
-        if (entidade instanceof Inimigo) {
-            final var posicaoJogadorRenderizada = jogador.posicaoRenderizada(interpolation);
-            if (posicaoJogadorRenderizada == null) return;
-            final var centroJogador = posicaoJogadorRenderizada.cpy().add(jogador.getColisao().cpy().scl(0.5f));
-            final var centroInimigo = posicaoRenderizada.cpy().add(entidade.getColisao().cpy().scl(0.5f));
+        Sprite armaSprite = null;
+        Sprite armaEngineSprite = null;
+        if (entidade instanceof Nave) {
+            entidade.getImagem().setRotation(((Nave) entidade).getRotacaoRenderizada(interpolation));
+            final var arma = ((Nave) entidade).getArma();
+            if (arma != null) {
+                armaSprite = arma.getArmaSprite();
+                armaEngineSprite = arma.getArmaEngineSprite();
+            }
+            if (armaSprite != null) {
+                armaSprite.setPosition(posicaoRenderizada.x + arma.getPosicaoRelativa().x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y + arma.getPosicaoRelativa().y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
+                armaSprite.setRotation(((Nave) entidade).getRotacaoRenderizada(interpolation));
+                armaSprite.draw(gameBatch);
 
-            final var degree = centroJogador.cpy().sub(centroInimigo).angleDeg() - 90;
-            entidade.getImagem().setRotation(degree);
-        } else if (entidade instanceof Jogador) {
-            final var degree = posicaoMouse.cpy().sub(posicaoRenderizada).angleDeg() - 90;
-            entidade.getImagem().setRotation(degree);
+                armaEngineSprite.setPosition(posicaoRenderizada.x - arma.getPosicaoRelativaEngine().x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y - arma.getPosicaoRelativaEngine().y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
+                armaEngineSprite.setRotation(((Nave) entidade).getRotacaoRenderizada(interpolation));
+                armaEngineSprite.draw(gameBatch);
+            }
         } else if (entidade instanceof Projetil) {
             entidade.getImagem().setRotation(entidade.getVelocidade().angleDeg() - 90);
         }
-
         entidade.getImagem().draw(gameBatch);
         if (renderizarCaixaDeColisao)
             shapeRenderer.rect(entidade.getPosicao().x, entidade.getPosicao().y, entidade.getColisao().x, entidade.getColisao().y);
@@ -307,7 +316,7 @@ public class Spaceunes extends ApplicationAdapter {
         ScreenUtils.clear(0, 0, 0, 1);
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.F1)) {
-            atualizacoesPorSegundo = atualizacoesPorSegundo == 60 ? 7 : atualizacoesPorSegundo == 7 ? 100000 : 60;
+            atualizacoesPorSegundo = atualizacoesPorSegundo == 60 ? 7 : atualizacoesPorSegundo == 7 ? 10000 : 60;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F2)) {
             renderizarCaixaDeColisao = !renderizarCaixaDeColisao;
@@ -347,24 +356,20 @@ public class Spaceunes extends ApplicationAdapter {
             case EM_JOGO:
                 float deltaTime = Gdx.graphics.getDeltaTime();
 
-                parteAtual += deltaTime * 10f;
                 tempoDesdeUltimaAtualizacao += deltaTime;
 
                 while (tempoDesdeUltimaAtualizacao >= 1f / atualizacoesPorSegundo) {
-                    if (!pausado) tickUpdate();
+                    if (!pausado) tickUpdate(posicaoMouse);
                     tempoDesdeUltimaAtualizacao -= 1f / atualizacoesPorSegundo;
                 }
 
+                if (!pausado) parteAtual += deltaTime * 10f;
                 interfaceGraficaFundo.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
 
                 if (entidadesInimigas.size == 0) {
                     rodada++;
                     for (int i = 0; i < (rodada == 1 ? 1 : (rodada-1)*2); i++) {
-                        final var projetilTexture = new Texture("sprites/enemies/projectiles/bullet.png");
-
-                        final var projetilSprites = new Sprite[]{new Sprite(projetilTexture, 0, 0, 4, 16), new Sprite(projetilTexture, 4, 0, 4, 16), new Sprite(projetilTexture, 8, 0, 4, 16), new Sprite(projetilTexture, 12, 0, 4, 16)};
-
-                        entidadesInimigas.add(new Inimigo(new Sprite(new Texture("sprites/enemies/base/fighter.png")), new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO - 96), new Vector2(24,24), new Arma(0.5f, 5, 100, new Vector2(0, 0), projetilSprites, new Vector2(8, 8), Gdx.audio.newSound(Gdx.files.internal("sounds/laserSmall_004.ogg"))), 25));
+                        entidadesInimigas.add(new Inimigo(new Sprite(new Texture("sprites/enemies/base/fighter.png")), new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO - 96), new Vector2(24,24), CriadorArmas.basica(), 25, 100f));
                     }
                 }
 
@@ -402,7 +407,7 @@ public class Spaceunes extends ApplicationAdapter {
                 fontePadrao.draw(gameBatch, "Quadros por segundo: " + Gdx.graphics.getFramesPerSecond(), 0, 20);
                 fontePadrao.draw(gameBatch, "Atualizações por segundo: " + atualizacoesPorSegundo, 0, 40);
                 fontePadrao.draw(gameBatch, "Vida: " + jogador.getVida(), 0, ALTURA_JOGO - 20);
-
+                fontePadrao.draw(gameBatch, "XP: " + jogador.getXp(), 0, ALTURA_JOGO - 60);
                 if (pausado) {
                     interfaceGraficaPausado.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                 }
@@ -410,6 +415,11 @@ public class Spaceunes extends ApplicationAdapter {
                 if (jogador.estaDestruido()) {
                     interfaceGraficaGameOver.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                     interfaceGraficaPressioneParaContinuar.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
+                } else {
+                    if (jogador.querendoTrocarArma()) {
+                        fontePadrao.draw(gameBatch, "Escolha a arma: ", LARGURA_JOGO / 2.0f - 100, ALTURA_JOGO / 2.0f + 20);
+
+                    }
                 }
 
                 break;

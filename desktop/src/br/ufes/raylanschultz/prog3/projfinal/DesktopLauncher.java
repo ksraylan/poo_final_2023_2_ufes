@@ -11,7 +11,6 @@ public class DesktopLauncher {
 		config.useVsync(true);
 		config.setTitle("Spaceunes");
 		config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
-		config.setWindowedMode(1280, 720);
 		new Lwjgl3Application(new Spaceunes(), config);
 	}
 }
