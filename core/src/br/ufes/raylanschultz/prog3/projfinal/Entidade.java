@@ -7,8 +7,8 @@ import com.badlogic.gdx.utils.Array;
 public abstract class Entidade {
     private Vector2 ultimaPosicao;
 
-    private float frameTime = 0f;
-    private int frameAtual = 0;
+    protected float frameTime = 0f;
+    protected int frameAtual = 0;
 
     public Vector2 getPosicao() {
         return posicao;
@@ -44,7 +44,7 @@ public abstract class Entidade {
     private float atrito = 0.0f;
     private float aceleracao = 0f;
     private float velocidadeMaxima = 0f;
-    private final Sprite[] imagens;
+    protected final Sprite[] imagens;
     private Vector2 colisao;
 
     public Entidade(Sprite imagem) {
@@ -143,11 +143,11 @@ public abstract class Entidade {
         }
     }
 
-    public void checarColisao(Array<Entidade> entidades) {
+    public void checarColisao(Array<Entidade> entidades, float deltaTime) {
         for (var entidade : entidades) {
             if (entidade.getPosicao().x < posicao.x + colisao.x && entidade.getPosicao().x + entidade.getColisao().x > posicao.x &&
                     entidade.getPosicao().y < posicao.y + colisao.y && entidade.getPosicao().y + entidade.getColisao().y > posicao.y) {
-                entidade.colidir(this);
+                if (!(entidade instanceof EntidadeDanificavel) || !((EntidadeDanificavel) entidade).estaDestruido() )entidade.colidir(this, deltaTime);
             }
         }
     }
@@ -156,7 +156,7 @@ public abstract class Entidade {
         this.movimento = movimento.nor();
     }
 
-    public void colidir(Entidade entidade) {};
+    public void colidir(Entidade entidade, float deltaTime) {};
 
     public void setFrameAtual(int frameAtual) {
         this.frameAtual = frameAtual;
@@ -166,5 +166,9 @@ public abstract class Entidade {
         return frameAtual;
     }
 
-    public abstract boolean estaDestruido();
+    public abstract boolean estaCompletamenteDestruido();
+
+    public float getColisaoDano() {
+        return 10;
+    }
 }

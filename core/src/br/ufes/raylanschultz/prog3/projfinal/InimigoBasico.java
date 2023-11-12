@@ -4,9 +4,9 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
-public class Inimigo extends Nave implements Atirador {
-    public Inimigo(Sprite sprite, Vector2 position, Vector2 hitbox, Arma arma, int vida, float velocidadeRotacao) {
-        super(sprite, position, hitbox, 0.1f, 1000f, 1000f, vida, velocidadeRotacao);
+public class InimigoBasico extends Nave implements Atirador {
+    public InimigoBasico(Sprite sprite, Vector2 position, Vector2 hitbox, Arma arma, int vida, float velocidadeRotacao, Sprite[] destruicao, float atrito, float aceleracao, float velocidadeMaxima) {
+        super(sprite, position, hitbox, atrito, aceleracao, velocidadeMaxima, vida, velocidadeRotacao, destruicao);
         this.arma = arma;
     }
 
@@ -18,7 +18,7 @@ public class Inimigo extends Nave implements Atirador {
     @Override
     public void atualizarFisica(float deltaTime) {
         super.atualizarFisica(deltaTime);
+        if (estaDestruido()) return;
         setMovimento(new Vector2(MathUtils.random(-1, 1), MathUtils.random(-1, 1)).nor());
-        arma.atualizarFisica(deltaTime);
     }
 }

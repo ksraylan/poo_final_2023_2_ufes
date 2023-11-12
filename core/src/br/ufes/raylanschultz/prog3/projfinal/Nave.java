@@ -9,15 +9,15 @@ public class Nave extends EntidadeDanificavel {
     private final float velocidadeRotacao;
     private Vector2 olharPara;
     protected Arma arma;
-    public Nave(Sprite imagem, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, float vida, float velocidadeRotacao) {
-        super(imagem, posicao, colisao, atrito, aceleracao, velocidadeMaxima, vida);
+    public Nave(Sprite imagem, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, float vida, float velocidadeRotacao, Sprite[] destruicao) {
+        super(imagem, posicao, colisao, atrito, aceleracao, velocidadeMaxima, vida, destruicao);
         this.velocidadeRotacao = velocidadeRotacao;
         this.rotacao = 0;
         this.rotacaoAnterior = 0;
     }
 
-    public Nave(Sprite[] imagens, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, float vida, float velocidadeRotacao) {
-        super(imagens, posicao, colisao, atrito, aceleracao, velocidadeMaxima, vida);
+    public Nave(Sprite[] imagens, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, float vida, float velocidadeRotacao, Sprite[] destruicao) {
+        super(imagens, posicao, colisao, atrito, aceleracao, velocidadeMaxima, vida, destruicao);
         this.velocidadeRotacao = velocidadeRotacao;
         this.rotacao = 0;
         this.rotacaoAnterior = 0;
@@ -26,6 +26,8 @@ public class Nave extends EntidadeDanificavel {
     @Override
     public void atualizarFisica(float deltaTime) {
         super.atualizarFisica(deltaTime);
+        if (estaDestruido()) return;
+        if (arma != null) arma.atualizarFisica(deltaTime);
         if (olharPara != null) {
             rotacaoAnterior = rotacao;
             var rotacaoFinal = anguloNormalizado(getPosicao().cpy().add(getColisao().cpy().scl(0.5f)).sub(olharPara).angleDeg() + 90);

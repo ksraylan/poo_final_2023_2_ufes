@@ -17,7 +17,7 @@ public class Projetil extends Entidade {
     }
 
     @Override
-    public boolean estaDestruido() {
+    public boolean estaCompletamenteDestruido() {
         return resistencia <= 0;
     }
 

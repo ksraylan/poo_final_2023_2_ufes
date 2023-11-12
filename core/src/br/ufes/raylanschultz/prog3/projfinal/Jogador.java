@@ -1,12 +1,8 @@
 package br.ufes.raylanschultz.prog3.projfinal;
 
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
 
 public class Jogador extends Nave implements Atirador {
     private int xp = 0;
@@ -14,10 +10,10 @@ public class Jogador extends Nave implements Atirador {
     private int nivel = 1;
     private boolean trocouArma = false;
 
-    public Jogador(Sprite[] imagens, Vector2 position, Vector2 hitbox, int vida) {
-        super(imagens, position, hitbox, 5f, 1000f, 1000f, vida, 200f);
+    public Jogador(Sprite[] imagens, Vector2 position, Vector2 hitbox, int vida, Sprite[] destruicao) {
+        super(imagens, position, hitbox, 5f, 1000f, 1000f, vida, 200f, destruicao);
 
-        arma = CriadorArmas.gun();
+        arma = CriadorArmas.laser();
     }
 
     public Projetil atirar(Vector2 posicaoMouse) {
@@ -25,13 +21,11 @@ public class Jogador extends Nave implements Atirador {
     }
 
     @Override
-    public void atualizarFisica(float deltaTime) {
-        super.atualizarFisica(deltaTime);
-        arma.atualizarFisica(deltaTime);
-    }
-
-    @Override
     public void atualizarQuadro(float deltaTime) {
+        if (estaDestruido()) {
+            super.atualizarQuadro(deltaTime);
+            return;
+        }
         if (this.getVida() > this.getVidaMaxima() / 2) {
             this.setFrameAtual(0);
         } else if (this.getVida() > this.getVidaMaxima() / 4) {
@@ -45,7 +39,7 @@ public class Jogador extends Nave implements Atirador {
 
     public void addXp(int xp) {
         this.xp += xp;
-        final var proximoNivel = 20 * (int) Math.pow(2, this.nivel - 1);
+        final var proximoNivel = 2 * (int) Math.pow(2, this.nivel - 1);
         if (this.xp >= proximoNivel) {
             this.xp -= proximoNivel;
             this.nivel++;
@@ -54,12 +48,11 @@ public class Jogador extends Nave implements Atirador {
     }
 
     public boolean querendoTrocarArma() {
-        return true;
-//        return !this.trocouArma && this.pontos > 0;
+        return !this.trocouArma && this.pontos > 0;
     }
 
     public void trocarArma(Arma armaNova) {
-        if (this.trocouArma || this.pontos == 0) {
+        if (this.trocouArma || this.pontos <= 0) {
             return;
         }
         this.arma = armaNova;
@@ -72,5 +65,17 @@ public class Jogador extends Nave implements Atirador {
 
     public int getXp() {
         return xp;
+    }
+
+    @Override
+    public void colidir(Entidade entidade, float deltaTime) {
+        super.colidir(entidade, deltaTime);
+        if (estaDestruido()) return;
+        if (entidade instanceof Projetil) return;
+        vida -= deltaTime * entidade.getColisaoDano();
+        if (estaDestruido()) {
+            vida = 0;
+            this.frameAtual = 0;
+        }
     }
 }

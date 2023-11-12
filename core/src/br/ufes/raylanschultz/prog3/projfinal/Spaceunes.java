@@ -14,7 +14,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class Spaceunes extends ApplicationAdapter {
@@ -29,15 +29,15 @@ public class Spaceunes extends ApplicationAdapter {
 
     private float tempoDesdeUltimaAtualizacao = 0;
 
-    private Array<Entidade> entidadesAliadas = new Array<>();
-    private Array<Entidade> projeteisAliados = new Array<>();
-    private Array<Entidade> entidadesInimigas = new Array<>();
-    private Array<Entidade> projeteisInimigos = new Array<>();
+    private final Array<Entidade> entidadesAliadas = new Array<>();
+    private final Array<Entidade> projeteisAliados = new Array<>();
+    private final Array<Entidade> entidadesInimigas = new Array<>();
+    private final Array<Entidade> projeteisInimigos = new Array<>();
 
     private Jogador jogador;
 
-    private final static int LARGURA_JOGO = 512;
-    private final static int ALTURA_JOGO = 448;
+    private final static int LARGURA_JOGO = 854;
+    private final static int ALTURA_JOGO = 480;
 
     private boolean renderizarCaixaDeColisao = false;
 
@@ -46,6 +46,7 @@ public class Spaceunes extends ApplicationAdapter {
     private InterfaceGrafica interfaceGraficaGameOver;
     private InterfaceGrafica interfaceGraficaPressioneParaContinuar;
     private InterfaceGrafica interfaceGraficaFundo;
+    private InterfaceGrafica interfaceGraficaEscolherArmaFundo;
     private final Array<Botao> botoes = new Array<>();
 
     private Cena cenaAtual = Cena.MENU;
@@ -54,13 +55,24 @@ public class Spaceunes extends ApplicationAdapter {
 
     private int rodada = 0;
     private float parteAtual = 0;
+    private Arma[] armas = null;
+    private Sprite[] jogadorSprites = null;
+    private Sprite[] jogadorDestruicaoSprites = null;
+    private final int escolherArmaSeparar = 96;
+    private final int escolherArmaOffset = 259;
+    private final int escolherArmaY = 128;
+    private boolean podeTrocarArma = false;
+
+    private Sprite[] inimigoBasicoDestruicaoSprites = null;
+    private Sprite inimigoBasicoSprite = null;
+    private Sprite bomberInimigoSprite = null;
 
     @Override
     public void create() {
         gameBatch = new SpriteBatch();
         cameraDoJogo = new OrthographicCamera();
         cameraDoJogo.setToOrtho(false, LARGURA_JOGO, ALTURA_JOGO);
-        gameViewport = new ExtendViewport(LARGURA_JOGO, ALTURA_JOGO, cameraDoJogo);
+        gameViewport = new FitViewport(LARGURA_JOGO, ALTURA_JOGO, cameraDoJogo);
         final var generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/game_over.ttf"));
         final var parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
         parameter.size = 64;
@@ -88,8 +100,10 @@ public class Spaceunes extends ApplicationAdapter {
         var imagemPausado = new Sprite(new Texture("sprites/ui/paused.png"));
         var imagemGameOver = new Sprite(new Texture("sprites/ui/game-over.png"));
         var imagemPressioneParaContinuar = new Sprite(new Texture("sprites/ui/press-to-continue.png"));
+        var imagemEscolherArmaFundo = new Sprite(new Texture("sprites/ui/choose-weapon.png"));
 
         var fundoVoidJunto = new Texture("sprites/backgrounds/void.png");
+
 
         var partes = 9;
         Sprite[] fundoVoids = new Sprite[partes];
@@ -110,6 +124,9 @@ public class Spaceunes extends ApplicationAdapter {
         for (int i = 0; i < partes; i++) {
             fundoEstrelasDistantes[i] = new Sprite(fundoEstrelasDistantesJuntas, i * (fundoEstrelasDistantesJuntas.getWidth() / partes), 0, fundoEstrelasDistantesJuntas.getWidth() / partes, fundoEstrelasDistantesJuntas.getHeight());
         }
+
+        inimigoBasicoSprite = new Sprite(new Texture("sprites/enemies/base/fighter.png"));
+        bomberInimigoSprite = new Sprite(new Texture("sprites/enemies/base/bomber.png"));
 
         interfaceGraficaPausado = new InterfaceGrafica() {
             @Override
@@ -132,11 +149,18 @@ public class Spaceunes extends ApplicationAdapter {
             }
         };
 
+        interfaceGraficaEscolherArmaFundo = new InterfaceGrafica() {
+            @Override
+            public void renderizar(Batch gameBatch, Vector2 posicaoMouse, boolean pressionado) {
+                gameBatch.draw(imagemEscolherArmaFundo, LARGURA_JOGO / 2.0f - imagemEscolherArmaFundo.getWidth() / 2, ALTURA_JOGO / 2.0f - imagemEscolherArmaFundo.getHeight() / 2 - 45);
+            }
+        };
+
         interfaceGraficaFundo = new InterfaceGrafica() {
             @Override
             public void renderizar(Batch gameBatch, Vector2 posicaoMouse, boolean pressionado) {
                 if (parteAtual >= partes) parteAtual -= partes;
-                for (int x = -2; x <= 2; x++) {
+                for (int x = 0; x <= 1; x++) {
                     for (int y = 0; y <= 1; y++) {
                         gameBatch.draw(fundoVoids[(int) parteAtual], x * fundoVoids[(int) parteAtual].getWidth(), y * fundoVoids[(int) parteAtual].getHeight(), fundoVoids[(int) parteAtual].getWidth(), fundoVoids[(int) parteAtual].getHeight());
                         gameBatch.draw(fundoEstrelas[(int) parteAtual], x * fundoEstrelas[(int) parteAtual].getWidth(), y * fundoEstrelas[(int) parteAtual].getHeight(), fundoEstrelas[(int) parteAtual].getWidth(), fundoEstrelas[(int) parteAtual].getHeight());
@@ -158,11 +182,8 @@ public class Spaceunes extends ApplicationAdapter {
         interfaceGraficasMenu.add(new InterfaceGrafica() {
             @Override
             public void renderizar(Batch gameBatch, Vector2 posicaoMouse, boolean pressionado) {
-                gameBatch.draw(imagemFundo, -512*2, 0, 512, 512);
-                gameBatch.draw(imagemFundo, -512, 0, 512, 512);
                 gameBatch.draw(imagemFundo, 0, 0, 512, 512);
                 gameBatch.draw(imagemFundo, 512, 0, 512, 512);
-                gameBatch.draw(imagemFundo, 512*2, 0, 512, 512);
             }
         });
 
@@ -177,6 +198,21 @@ public class Spaceunes extends ApplicationAdapter {
         interfaceGraficasMenu.add(botaoInicar);
         botoes.add(botaoInicar);
         shapeRenderer = new ShapeRenderer();
+
+        jogadorSprites = new Sprite[] {
+                new Sprite(new Texture("sprites/ship/base/full.png")),
+                new Sprite(new Texture("sprites/ship/base/damage1.png")),
+                new Sprite(new Texture("sprites/ship/base/damage2.png")),
+                new Sprite(new Texture("sprites/ship/base/damage3.png"))
+        };
+
+        final var jogadorDestruicaoTexture = new Texture("sprites/ship/base/destruction.png");
+        // 8 sprites de 64x64
+        jogadorDestruicaoSprites = new Sprite[]{new Sprite(jogadorDestruicaoTexture, 0, 0, 64, 64), new Sprite(jogadorDestruicaoTexture, 64, 0, 64, 64), new Sprite(jogadorDestruicaoTexture, 128, 0, 64, 64), new Sprite(jogadorDestruicaoTexture, 192, 0, 64, 64), new Sprite(jogadorDestruicaoTexture, 256, 0, 64, 64), new Sprite(jogadorDestruicaoTexture, 320, 0, 64, 64), new Sprite(jogadorDestruicaoTexture, 384, 0, 64, 64), new Sprite(jogadorDestruicaoTexture, 448, 0, 64, 64)};
+
+        final var inimigoBasicoDestruicaoTexture = new Texture("sprites/enemies/destruction/fighter.png");
+        // 8 sprites de 64x64
+        inimigoBasicoDestruicaoSprites = new Sprite[]{new Sprite(inimigoBasicoDestruicaoTexture, 0, 0, 64, 64), new Sprite(inimigoBasicoDestruicaoTexture, 64, 0, 64, 64), new Sprite(inimigoBasicoDestruicaoTexture, 128, 0, 64, 64), new Sprite(inimigoBasicoDestruicaoTexture, 192, 0, 64, 64), new Sprite(inimigoBasicoDestruicaoTexture, 256, 0, 64, 64), new Sprite(inimigoBasicoDestruicaoTexture, 320, 0, 64, 64), new Sprite(inimigoBasicoDestruicaoTexture, 384, 0, 64, 64), new Sprite(inimigoBasicoDestruicaoTexture, 448, 0, 64, 64)};
     }
 
     private void novoJogo() {
@@ -186,15 +222,23 @@ public class Spaceunes extends ApplicationAdapter {
         entidadesInimigas.clear();
         projeteisInimigos.clear();
 
-        var jogadorSprites = new Sprite[] {
-                new Sprite(new Texture("sprites/ship/base/full.png")),
-                new Sprite(new Texture("sprites/ship/base/damage1.png")),
-                new Sprite(new Texture("sprites/ship/base/damage2.png")),
-                new Sprite(new Texture("sprites/ship/base/damage3.png"))
+        jogador = new Jogador(jogadorSprites, new Vector2(0, 0), new Vector2(20,20), 100, jogadorDestruicaoSprites);
+        entidadesAliadas.add(jogador);
+
+        armas = new Arma[] {
+                CriadorArmas.gun(),
+                CriadorArmas.cannon(),
+                CriadorArmas.zapper(),
+                CriadorArmas.rockets(),
         };
 
-        jogador = new Jogador(jogadorSprites, new Vector2(0, 0), new Vector2(20,20), 100);
-        entidadesAliadas.add(jogador);
+        for (int i = 0; i < armas.length; i++) {
+            armas[i].getArmaSprite().setPosition(escolherArmaOffset + i * escolherArmaSeparar + armas[i].getPosicaoRelativa().x + jogadorSprites[0].getWidth() / 2 - armas[i].getArmaSprite().getWidth() / 2, escolherArmaY + armas[i].getPosicaoRelativa().y + jogadorSprites[0].getHeight() / 2 - armas[i].getArmaSprite().getHeight() / 2);
+
+            armas[i].getArmaEngineSprite().setPosition(escolherArmaOffset + i * escolherArmaSeparar + armas[i].getPosicaoRelativaEngine().x + jogadorSprites[0].getWidth() / 2 - armas[i].getArmaEngineSprite().getWidth() / 2, escolherArmaY + armas[i].getPosicaoRelativaEngine().y + jogadorSprites[0].getHeight() / 2 - armas[i].getArmaEngineSprite().getHeight() / 2);
+
+            armas[i].getSuporteSprite().setPosition(escolherArmaOffset + i * escolherArmaSeparar + armas[i].getPosicaoRelativaSuporte().x + jogadorSprites[0].getWidth() / 2 - armas[i].getSuporteSprite().getWidth() / 2, escolherArmaY + armas[i].getPosicaoRelativaSuporte().y + jogadorSprites[0].getHeight() / 2 - armas[i].getSuporteSprite().getHeight() / 2);
+        }
     }
 
     @Override
@@ -204,7 +248,7 @@ public class Spaceunes extends ApplicationAdapter {
 
     public void tickUpdateEntidade(Entidade entidade, Array<Entidade> entidades, int index) {
         entidade.atualizarFisica(1.0f / atualizacoesPorSegundo);
-        if (entidade.estaDestruido()) {
+        if (entidade.estaCompletamenteDestruido()) {
             entidades.removeIndex(index);
         } else if (!(entidade instanceof Projetil)) {
             if (entidade.getPosicao().y + entidade.getColisao().y > ALTURA_JOGO) {
@@ -220,20 +264,20 @@ public class Spaceunes extends ApplicationAdapter {
         }
     }
 
-    public void tickUpdateEntidadeAliada(Entidade entidade, int index, Vector2 posicaoMouse) {
+    public void tickUpdateEntidadeAliada(Entidade entidade, int index, Vector2 posicaoMouse, float deltaTime) {
         ((Nave) entidade).setOlharPara(posicaoMouse);
         this.tickUpdateEntidade(entidade, entidadesAliadas, index);
-        entidade.checarColisao(entidadesInimigas);
-        entidade.checarColisao(projeteisInimigos);
+        entidade.checarColisao(entidadesInimigas, deltaTime);
+        entidade.checarColisao(projeteisInimigos, deltaTime);
     }
 
-    public void tickUpdateEntidadeInimiga(Entidade entidade, int index) {
-        ((Inimigo) entidade).setOlharPara(jogador.getPosicao().cpy().add(jogador.getColisao().cpy().scl(0.5f)));
-        Projetil projetil = ((Inimigo) entidade).atirar(jogador);
+    public void tickUpdateEntidadeInimiga(Entidade entidade, int index, float deltaTime) {
+        ((InimigoBasico) entidade).setOlharPara(jogador.getPosicao().cpy().add(jogador.getColisao().cpy().scl(0.5f)));
+        Projetil projetil = ((InimigoBasico) entidade).atirar(jogador);
         if (projetil != null) projeteisInimigos.add(projetil);
         this.tickUpdateEntidade(entidade, entidadesInimigas, index);
-        entidade.checarColisao(entidadesAliadas);
-        entidade.checarColisao(projeteisAliados);
+        entidade.checarColisao(entidadesAliadas, deltaTime);
+        entidade.checarColisao(projeteisAliados, deltaTime);
     }
 
     public void tickUpdateProjetil(Entidade entidade, Array<Entidade> projeteis, int index) {
@@ -253,28 +297,28 @@ public class Spaceunes extends ApplicationAdapter {
         this.tickUpdateEntidade(entidade, projeteis, index);
     }
 
-    public void tickUpdateProjetilAliado(Entidade entidade, int index) {
+    public void tickUpdateProjetilAliado(Entidade entidade, int index, float deltaTime) {
         this.tickUpdateProjetil(entidade, projeteisAliados, index);
-        entidade.checarColisao(entidadesInimigas);
+        entidade.checarColisao(entidadesInimigas, deltaTime);
     }
 
-    public void tickUpdateProjetilInimigo(Entidade entidade, int index) {
+    public void tickUpdateProjetilInimigo(Entidade entidade, int index, float deltaTime) {
         this.tickUpdateProjetil(entidade, projeteisInimigos, index);
-        entidade.checarColisao(entidadesAliadas);
+        entidade.checarColisao(entidadesAliadas, deltaTime);
     }
 
-    public void tickUpdate(Vector2 posicaoMouse) {
+    public void tickUpdate(Vector2 posicaoMouse, float deltaTime) {
         for (int i = 0; i < entidadesAliadas.size; i++) {
-            tickUpdateEntidadeAliada(entidadesAliadas.get(i), i, posicaoMouse);
+            tickUpdateEntidadeAliada(entidadesAliadas.get(i), i, posicaoMouse, deltaTime);
         }
         for (int i = 0; i < entidadesInimigas.size; i++) {
-            tickUpdateEntidadeInimiga(entidadesInimigas.get(i), i);
+            tickUpdateEntidadeInimiga(entidadesInimigas.get(i), i, deltaTime);
         }
         for (int i = 0; i < projeteisAliados.size; i++) {
-            tickUpdateProjetilAliado(projeteisAliados.get(i), i);
+            tickUpdateProjetilAliado(projeteisAliados.get(i), i, deltaTime);
         }
         for (int i = 0; i < projeteisInimigos.size; i++) {
-            tickUpdateProjetilInimigo(projeteisInimigos.get(i), i);
+            tickUpdateProjetilInimigo(projeteisInimigos.get(i), i, deltaTime);
         }
     }
 
@@ -282,29 +326,39 @@ public class Spaceunes extends ApplicationAdapter {
         interpolation = pausado ? 1 : interpolation;
         var posicaoRenderizada = entidade.posicaoRenderizada(interpolation);
         if (posicaoRenderizada == null) return;
-        entidade.getImagem().setPosition(posicaoRenderizada.x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
+        if (entidade.getImagem() != null) entidade.getImagem().setPosition(posicaoRenderizada.x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
         Sprite armaSprite = null;
         Sprite armaEngineSprite = null;
-        if (entidade instanceof Nave) {
+        Sprite armaSuporteSprite = null;
+        Arma arma = null;
+        if (entidade instanceof Nave && entidade.getImagem() != null) {
             entidade.getImagem().setRotation(((Nave) entidade).getRotacaoRenderizada(interpolation));
-            final var arma = ((Nave) entidade).getArma();
-            if (arma != null) {
+            arma = ((Nave) entidade).getArma();
+            if (arma != null && !((Nave) entidade).estaDestruido()) {
                 armaSprite = arma.getArmaSprite();
                 armaEngineSprite = arma.getArmaEngineSprite();
+                armaSuporteSprite = arma.getSuporteSprite();
             }
             if (armaSprite != null) {
-                armaSprite.setPosition(posicaoRenderizada.x + arma.getPosicaoRelativa().x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y + arma.getPosicaoRelativa().y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
+                armaSprite.setPosition(posicaoRenderizada.x + arma.getPosicaoRelativa().x - armaSprite.getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y + arma.getPosicaoRelativa().y - armaSprite.getHeight() / 2 + entidade.getColisao().y / 2);
                 armaSprite.setRotation(((Nave) entidade).getRotacaoRenderizada(interpolation));
                 armaSprite.draw(gameBatch);
 
-                armaEngineSprite.setPosition(posicaoRenderizada.x - arma.getPosicaoRelativaEngine().x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y - arma.getPosicaoRelativaEngine().y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
+                armaEngineSprite.setPosition(posicaoRenderizada.x + arma.getPosicaoRelativaEngine().x - armaEngineSprite.getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y + arma.getPosicaoRelativaEngine().y - armaEngineSprite.getHeight() / 2 + entidade.getColisao().y / 2);
                 armaEngineSprite.setRotation(((Nave) entidade).getRotacaoRenderizada(interpolation));
                 armaEngineSprite.draw(gameBatch);
             }
         } else if (entidade instanceof Projetil) {
             entidade.getImagem().setRotation(entidade.getVelocidade().angleDeg() - 90);
         }
-        entidade.getImagem().draw(gameBatch);
+        if (entidade.getImagem() != null) entidade.getImagem().draw(gameBatch);
+
+        if (armaSuporteSprite != null) {
+            armaSuporteSprite.setPosition(posicaoRenderizada.x + arma.getPosicaoRelativaSuporte().x - armaSuporteSprite.getWidth() / 2 + entidade.getColisao().x / 2, posicaoRenderizada.y + arma.getPosicaoRelativaSuporte().y - armaSuporteSprite.getHeight() / 2 + entidade.getColisao().y / 2);
+            armaSuporteSprite.setRotation(((Nave) entidade).getRotacaoRenderizada(interpolation));
+            armaSuporteSprite.draw(gameBatch);
+        }
+
         if (renderizarCaixaDeColisao)
             shapeRenderer.rect(entidade.getPosicao().x, entidade.getPosicao().y, entidade.getColisao().x, entidade.getColisao().y);
     }
@@ -327,7 +381,7 @@ public class Spaceunes extends ApplicationAdapter {
                     Gdx.app.exit();
                     break;
                 case EM_JOGO:
-                    if (!jogador.estaDestruido()) {
+                    if (!jogador.estaCompletamenteDestruido()) {
                         pausado = !pausado;
                     } else {
                         cenaAtual = Cena.MENU;
@@ -337,7 +391,7 @@ public class Spaceunes extends ApplicationAdapter {
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             if (cenaAtual == Cena.EM_JOGO) {
-                if (jogador.estaDestruido()) {
+                if (jogador.estaCompletamenteDestruido()) {
                     novoJogo();
                 }
             }
@@ -359,7 +413,7 @@ public class Spaceunes extends ApplicationAdapter {
                 tempoDesdeUltimaAtualizacao += deltaTime;
 
                 while (tempoDesdeUltimaAtualizacao >= 1f / atualizacoesPorSegundo) {
-                    if (!pausado) tickUpdate(posicaoMouse);
+                    if (!pausado) tickUpdate(posicaoMouse, deltaTime);
                     tempoDesdeUltimaAtualizacao -= 1f / atualizacoesPorSegundo;
                 }
 
@@ -367,9 +421,16 @@ public class Spaceunes extends ApplicationAdapter {
                 interfaceGraficaFundo.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
 
                 if (entidadesInimigas.size == 0) {
-                    rodada++;
-                    for (int i = 0; i < (rodada == 1 ? 1 : (rodada-1)*2); i++) {
-                        entidadesInimigas.add(new Inimigo(new Sprite(new Texture("sprites/enemies/base/fighter.png")), new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO - 96), new Vector2(24,24), CriadorArmas.basica(), 25, 100f));
+                    podeTrocarArma = jogador.querendoTrocarArma();
+                    if (!podeTrocarArma) {
+                        rodada++;
+                        for (int i = 0; i < (rodada == 1 ? 1 : (rodada - 1) * 2); i++) {
+                            if (i % 2 == 0) {
+                            entidadesInimigas.add(new InimigoBasico(inimigoBasicoSprite, new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO - 96), new Vector2(24, 24), CriadorArmas.basica(), 25, 100f, inimigoBasicoDestruicaoSprites, 0.1f, 1000f, 1000f));
+                            } else {
+                                entidadesInimigas.add(new BomberInimigo(jogador, bomberInimigoSprite, new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO - 96), new Vector2(24, 24), 25, 100f, inimigoBasicoDestruicaoSprites, 3f, 500f, 700f));
+                            }
+                        }
                     }
                 }
 
@@ -412,13 +473,24 @@ public class Spaceunes extends ApplicationAdapter {
                     interfaceGraficaPausado.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                 }
 
-                if (jogador.estaDestruido()) {
+                if (jogador.estaCompletamenteDestruido()) {
                     interfaceGraficaGameOver.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                     interfaceGraficaPressioneParaContinuar.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                 } else {
-                    if (jogador.querendoTrocarArma()) {
-                        fontePadrao.draw(gameBatch, "Escolha a arma: ", LARGURA_JOGO / 2.0f - 100, ALTURA_JOGO / 2.0f + 20);
-
+                    if (podeTrocarArma && jogador.querendoTrocarArma()) {
+                        interfaceGraficaEscolherArmaFundo.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
+                        fontePadrao.draw(gameBatch, "Escolha a arma: ", LARGURA_JOGO / 2.0f - 90, ALTURA_JOGO / 2.0f + 20);
+                        for (int i = 0; i < armas.length; i++) {
+                            armas[i].getArmaSprite().draw(gameBatch);
+                            armas[i].getArmaEngineSprite().draw(gameBatch);
+                            gameBatch.draw(jogadorSprites[0], escolherArmaOffset + i*escolherArmaSeparar, escolherArmaY);
+                            armas[i].getSuporteSprite().draw(gameBatch);
+                            if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+                                if (armas[i].getArmaSprite().getBoundingRectangle().contains(posicaoMouse)) {
+                                    jogador.trocarArma(armas[i]);
+                                }
+                            }
+                        }
                     }
                 }
 
