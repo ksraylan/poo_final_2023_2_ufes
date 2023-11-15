@@ -3,21 +3,22 @@ package br.ufes.raylanschultz.prog3.projfinal;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 
-public class Jogador extends Nave implements Atirador {
+public class NaveAliada extends Nave implements Atirador {
     private int xp = 0;
     private int pontos = 0;
     private int nivel = 1;
     private boolean trocouArma = false;
 
-    public Jogador(Sprite[] imagens, Vector2 position, Vector2 hitbox, int vida, Sprite[] destruicao) {
+    public NaveAliada(Array<Entidade> entidades, Sprite[] imagens, Vector2 position, Vector2 hitbox, int vida, Sprite[] destruicao) {
         super(imagens, position, hitbox, 5f, 1000f, 1000f, vida, 200f, destruicao);
 
-        arma = CriadorArmas.laser();
+        arma = CriadorArmas.laser(this, entidades);
     }
 
-    public Projetil atirar(Vector2 posicaoMouse) {
-        return arma.atirar(this);
+    public void atirar(Vector2 posicaoMouse) {
+        arma.atirar();
     }
 
     @Override
@@ -48,13 +49,12 @@ public class Jogador extends Nave implements Atirador {
     }
 
     public boolean querendoTrocarArma() {
+//        return true;
         return !this.trocouArma && this.pontos > 0;
     }
 
+    @Override
     public void trocarArma(Arma armaNova) {
-        if (this.trocouArma || this.pontos <= 0) {
-            return;
-        }
         this.arma = armaNova;
         this.trocouArma = true;
     }

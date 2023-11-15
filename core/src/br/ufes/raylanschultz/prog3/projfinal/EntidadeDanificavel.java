@@ -30,8 +30,8 @@ public abstract class EntidadeDanificavel extends Entidade {
             if (estaDestruido()) {
                 vida = 0;
                 this.frameAtual = 0;
-                if (((Projetil) entidade).getAtirador() instanceof Jogador) {
-                    ((Jogador)((Projetil) entidade).getAtirador()).addXp(1);
+                if (((Projetil) entidade).getAtirador() instanceof NaveAliada) {
+                    ((NaveAliada)((Projetil) entidade).getAtirador()).addXp(1);
                 }
             }
         }
@@ -76,11 +76,6 @@ public abstract class EntidadeDanificavel extends Entidade {
     @Override
     public Sprite getImagem() {
         return vida > 0 ? imagens[frameAtual] : (frameAtual < destruicao.length ? destruicao[frameAtual] : null);
-    }
-
-    @Override
-    public Vector2 posicaoRenderizada(float interpolation)  {
-        return !estaDestruido() ? super.posicaoRenderizada(interpolation) : getPosicao();
     }
 
     @Override

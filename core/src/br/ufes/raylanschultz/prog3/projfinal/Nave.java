@@ -3,8 +3,7 @@ package br.ufes.raylanschultz.prog3.projfinal;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 
-public class Nave extends EntidadeDanificavel {
-    private float rotacaoAnterior;
+public abstract class Nave extends EntidadeDanificavel {
     private float rotacao;
     private final float velocidadeRotacao;
     private Vector2 olharPara;
@@ -13,23 +12,23 @@ public class Nave extends EntidadeDanificavel {
         super(imagem, posicao, colisao, atrito, aceleracao, velocidadeMaxima, vida, destruicao);
         this.velocidadeRotacao = velocidadeRotacao;
         this.rotacao = 0;
-        this.rotacaoAnterior = 0;
     }
 
     public Nave(Sprite[] imagens, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, float vida, float velocidadeRotacao, Sprite[] destruicao) {
         super(imagens, posicao, colisao, atrito, aceleracao, velocidadeMaxima, vida, destruicao);
         this.velocidadeRotacao = velocidadeRotacao;
         this.rotacao = 0;
-        this.rotacaoAnterior = 0;
+    }
+
+    public void trocarArma(Arma armaNova) {
+        this.arma = armaNova;
     }
 
     @Override
     public void atualizarFisica(float deltaTime) {
         super.atualizarFisica(deltaTime);
         if (estaDestruido()) return;
-        if (arma != null) arma.atualizarFisica(deltaTime);
         if (olharPara != null) {
-            rotacaoAnterior = rotacao;
             var rotacaoFinal = anguloNormalizado(getPosicao().cpy().add(getColisao().cpy().scl(0.5f)).sub(olharPara).angleDeg() + 90);
 
             if (diferencaAngulos(rotacaoFinal, rotacao) < 0) {
@@ -44,6 +43,7 @@ public class Nave extends EntidadeDanificavel {
                 }
             }
         }
+        if (arma != null) arma.atualizarFisica(deltaTime);
     }
 
     private float anguloNormalizado(float angulo) {
@@ -59,12 +59,6 @@ public class Nave extends EntidadeDanificavel {
 
         return diferenca;
     }
-
-    public float getRotacaoRenderizada(float interpolacao) {
-        return rotacao;
-//        return rotacaoAnterior * (1.0f - interpolacao) + (rotacao * interpolacao);
-    }
-
     public float getRotacao() {
         return rotacao;
     }
