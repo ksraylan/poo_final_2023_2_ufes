@@ -130,11 +130,11 @@ public abstract class Entidade {
         }
     }
 
-    public void checarColisao(Array<Entidade> entidades, float deltaTime) {
+    public void checarColisao(Array<Entidade> entidades, float physicsDeltaTime) {
         for (var entidade : entidades) {
             if (entidade.getPosicao().x < posicao.x + colisao.x && entidade.getPosicao().x + entidade.getColisao().x > posicao.x &&
                     entidade.getPosicao().y < posicao.y + colisao.y && entidade.getPosicao().y + entidade.getColisao().y > posicao.y) {
-                if (!(entidade instanceof EntidadeDanificavel) || !((EntidadeDanificavel) entidade).estaDestruido() )entidade.colidir(this, deltaTime);
+                if (!(entidade instanceof EntidadeDanificavel) || !((EntidadeDanificavel) entidade).estaDestruido() )entidade.colidir(this, physicsDeltaTime);
             }
         }
     }
@@ -143,7 +143,7 @@ public abstract class Entidade {
         this.movimento = movimento.nor();
     }
 
-    public void colidir(Entidade entidade, float deltaTime) {};
+    public void colidir(Entidade entidade, float physicsDeltaTime) {};
 
     public void setFrameAtual(int frameAtual) {
         this.frameAtual = frameAtual;
@@ -157,5 +157,8 @@ public abstract class Entidade {
 
     public float getColisaoDano() {
         return 10;
+    }
+    public Vector2 getMovimento() {
+        return movimento;
     }
 }

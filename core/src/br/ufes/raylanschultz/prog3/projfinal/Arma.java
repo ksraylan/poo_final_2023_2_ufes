@@ -8,9 +8,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
 public class Arma {
-    protected final float cooldown;
+    protected float cooldown;
     protected float cooldownAtual = 0;
-    protected final int dano;
+    protected int dano;
     protected final int velocidadeProjetil;
     protected final Vector2 posicaoRelativa;
     protected final Vector2 posicaoRelativaEngine;
@@ -135,5 +135,21 @@ public class Arma {
 
     public Vector2 getPosicaoRelativaSuporte() {
         return posicaoRelativaSuporte;
+    }
+
+    public void aumentarDano(int dano) {
+        this.dano += dano;
+    }
+
+    public int getDano() {
+        return dano;
+    }
+
+    public float getTempoRecarga() {
+        return cooldown;
+    }
+
+    public void diminuirTempoRecarga(float cooldownPercentage) {
+        this.cooldown *= 1.0f - cooldownPercentage;
     }
 }

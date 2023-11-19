@@ -27,7 +27,7 @@ public class Canhao extends Arma {
     protected float quadroTemporizador = 0;
 
     public Canhao(Nave nave, Array<Entidade> projeteis) {
-        super(nave, projeteis, 0.1f, 15, 175, new Vector2(0, -2), CANNON_PROJETIL_SPRITES, new Vector2(0, 0), CANNON_SOM, CANNON_ARMA_SPRITES, CANNON_ENGINE_SPRITE, new Vector2(0, 0), CANNON_SUPORTE_SPRITE, new Vector2(0, -3), 0.25f);
+        super(nave, projeteis, 0.1f, 9, 175, new Vector2(0, -2), CANNON_PROJETIL_SPRITES, new Vector2(0, 0), CANNON_SOM, CANNON_ARMA_SPRITES, CANNON_ENGINE_SPRITE, new Vector2(0, 0), CANNON_SUPORTE_SPRITE, new Vector2(0, -3), 0.25f);
     }
 
     @Override

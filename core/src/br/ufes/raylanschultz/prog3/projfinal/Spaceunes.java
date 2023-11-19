@@ -62,14 +62,23 @@ public class Spaceunes extends ApplicationAdapter {
     private final int escolherArmaOffset = 259;
     private final int escolherArmaY = 128;
     private boolean podeTrocarArma = false;
+    private boolean podeUpgrade = false;
 
     private Sprite[] inimigoBasicoDestruicaoSprites = null;
     private Sprite[] bomberInimigoDestruicaoSprites = null;
+    private Sprite[] suporteInimigoDestruicaoSprites = null;
     private Sprite inimigoBasicoSprite = null;
     private Sprite bomberInimigoSprite = null;
+    private Sprite suporteInimigoSprite = null;
     private boolean trocarArmaDebug = false;
     private boolean stepFrames = false;
     private boolean steppingFrame = false;
+
+    private static final int RODADA_CHEFE = 10;
+    private float timerChefe = 0;
+    private int intercalarTiposInimigosChefe = 0;
+
+    private float tempoAtualEntreRodadas = 0f;
 
     @Override
     public void create() {
@@ -83,26 +92,26 @@ public class Spaceunes extends ApplicationAdapter {
 
         fontePadrao = generator.generateFont(parameter);
         Gdx.input.setInputProcessor(new InputAdapter() {
-           @Override
-           public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-               if (cenaAtual == Cena.MENU) {
-                   if (button == Input.Buttons.LEFT) {
-                       Vector2 posicaoMouse = gameViewport.unproject(new Vector2(screenX, screenY));
-                       for (Botao botao : botoes) {
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (cenaAtual == Cena.MENU) {
+                    if (button == Input.Buttons.LEFT) {
+                        Vector2 posicaoMouse = gameViewport.unproject(new Vector2(screenX, screenY));
+                        for (Botao botao : botoes) {
                             if (botao.clicado(posicaoMouse)) {
                                 cenaAtual = Cena.EM_JOGO;
                                 novoJogo();
                                 return true;
                             }
-                       }
-                   }
-               } else if (cenaAtual == Cena.EM_JOGO) {
-                   if (button == Input.Buttons.LEFT) {
-                       naveAliada.getArma().liberar();
-                   }
-               }
-               return false;
-           }
+                        }
+                    }
+                } else if (cenaAtual == Cena.EM_JOGO) {
+                    if (button == Input.Buttons.LEFT) {
+                        naveAliada.getArma().liberar();
+                    }
+                }
+                return false;
+            }
         });
 
         var imagemPausado = new Sprite(new Texture("sprites/ui/paused.png"));
@@ -135,6 +144,7 @@ public class Spaceunes extends ApplicationAdapter {
 
         inimigoBasicoSprite = new Sprite(new Texture("sprites/enemies/base/fighter.png"));
         bomberInimigoSprite = new Sprite(new Texture("sprites/enemies/base/bomber.png"));
+        suporteInimigoSprite = new Sprite(new Texture("sprites/enemies/base/support.png"));
 
         interfaceGraficaPausado = new InterfaceGrafica() {
             @Override
@@ -182,7 +192,7 @@ public class Spaceunes extends ApplicationAdapter {
         };
 
 
-        var botaoIniciarTamanho = new Vector2(12*5, 13*5);
+        var botaoIniciarTamanho = new Vector2(12 * 5, 13 * 5);
         var botaoInicar = new Botao(new Rectangle(LARGURA_JOGO / 2.0f - botaoIniciarTamanho.x / 2, 75, botaoIniciarTamanho.x, botaoIniciarTamanho.y), new Sprite(new Texture("sprites/ui/8x8.png"), 125, 0, 12, 13), new Sprite(new Texture("sprites/ui/8x8.png"), 137, 0, 12, 13), new Sprite(new Texture("sprites/ui/8x8.png"), 149, 0, 12, 13));
 
         var imagemFundo = new Sprite(new Texture("sprites/ui/background.png"));
@@ -207,7 +217,7 @@ public class Spaceunes extends ApplicationAdapter {
         botoes.add(botaoInicar);
         shapeRenderer = new ShapeRenderer();
 
-        jogadorSprites = new Sprite[] {
+        jogadorSprites = new Sprite[]{
                 new Sprite(new Texture("sprites/ship/base/full.png")),
                 new Sprite(new Texture("sprites/ship/base/damage1.png")),
                 new Sprite(new Texture("sprites/ship/base/damage2.png")),
@@ -224,6 +234,9 @@ public class Spaceunes extends ApplicationAdapter {
         final var bomberInimigoDestruicaoTexture = new Texture("sprites/enemies/destruction/bomber.png");
         // 8 sprites de 64x64
         bomberInimigoDestruicaoSprites = new Sprite[]{new Sprite(bomberInimigoDestruicaoTexture, 0, 0, 64, 64), new Sprite(bomberInimigoDestruicaoTexture, 64, 0, 64, 64), new Sprite(bomberInimigoDestruicaoTexture, 128, 0, 64, 64), new Sprite(bomberInimigoDestruicaoTexture, 192, 0, 64, 64), new Sprite(bomberInimigoDestruicaoTexture, 256, 0, 64, 64), new Sprite(bomberInimigoDestruicaoTexture, 320, 0, 64, 64), new Sprite(bomberInimigoDestruicaoTexture, 384, 0, 64, 64), new Sprite(bomberInimigoDestruicaoTexture, 448, 0, 64, 64)};
+        final var suporteInimigoDestruicaoTexture = new Texture("sprites/enemies/destruction/support.png");
+        // 9 sprites de 64x64
+        suporteInimigoDestruicaoSprites = new Sprite[]{new Sprite(suporteInimigoDestruicaoTexture, 0, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 64, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 128, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 192, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 256, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 320, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 384, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 448, 0, 64, 64), new Sprite(suporteInimigoDestruicaoTexture, 512, 0, 64, 64)};
     }
 
     private void novoJogo() {
@@ -233,10 +246,13 @@ public class Spaceunes extends ApplicationAdapter {
         entidadesInimigas.clear();
         projeteisInimigos.clear();
 
-        naveAliada = new NaveAliada(projeteisAliados, jogadorSprites, new Vector2(0, 0), new Vector2(20,20), 100, jogadorDestruicaoSprites);
+        final var colisao = new Vector2(20, 20);
+        final var posicao = new Vector2(LARGURA_JOGO / 2f - colisao.x / 2f, 75);
+
+        naveAliada = new NaveAliada(projeteisAliados, jogadorSprites, posicao, colisao, 100, jogadorDestruicaoSprites);
         entidadesAliadas.add(naveAliada);
 
-        armas = new Arma[] {
+        armas = new Arma[]{
                 CriadorArmas.gun(naveAliada, projeteisAliados),
                 CriadorArmas.cannon(naveAliada, projeteisAliados),
                 CriadorArmas.zapper(naveAliada, projeteisAliados),
@@ -263,80 +279,93 @@ public class Spaceunes extends ApplicationAdapter {
         if (entidade.estaCompletamenteDestruido()) {
             entidades.removeIndex(index);
         } else if (!(entidade instanceof Projetil)) {
-            if (entidade.getPosicao().y + entidade.getColisao().y > ALTURA_JOGO) {
+            if (entidade.getPosicao().y + entidade.getColisao().y > ALTURA_JOGO && (!(entidade instanceof Inimigo) || !((Inimigo) entidade).getPodeMoverCimaJogo())) {
                 entidade.setPosicao(new Vector2(entidade.getPosicao().x, ALTURA_JOGO - entidade.getColisao().y));
+                entidade.setVelocidade(new Vector2(entidade.getVelocidade().x, 0));
             } else if (entidade.getPosicao().y < 0) {
                 entidade.setPosicao(new Vector2(entidade.getPosicao().x, 0));
+                entidade.setVelocidade(new Vector2(entidade.getVelocidade().x, 0));
+            } else if (entidade instanceof Inimigo && ((Inimigo) entidade).getPodeMoverCimaJogo() && entidade.getPosicao().y + entidade.getColisao().y < ALTURA_JOGO) {
+                ((Inimigo) entidade).desativarMovimentacaoCimaJogo();
             }
             if (entidade.getPosicao().x + entidade.getColisao().x > LARGURA_JOGO) {
                 entidade.setPosicao(new Vector2(LARGURA_JOGO - entidade.getColisao().x, entidade.getPosicao().y));
+                entidade.setVelocidade(new Vector2(0, entidade.getVelocidade().y));
             } else if (entidade.getPosicao().x < 0) {
                 entidade.setPosicao(new Vector2(0, entidade.getPosicao().y));
+                entidade.setVelocidade(new Vector2(0, entidade.getVelocidade().y));
             }
         }
     }
 
-    public void tickUpdateEntidadeAliada(Entidade entidade, int index, Vector2 posicaoMouse, float deltaTime) {
+    public void tickUpdateEntidadeAliada(Entidade entidade, int index, Vector2 posicaoMouse) {
         ((Nave) entidade).setOlharPara(posicaoMouse);
         this.tickUpdateEntidade(entidade, entidadesAliadas, index);
-        entidade.checarColisao(entidadesInimigas, deltaTime);
-        entidade.checarColisao(projeteisInimigos, deltaTime);
+        entidade.checarColisao(entidadesInimigas, 1.0f / atualizacoesPorSegundo);
+        entidade.checarColisao(projeteisInimigos, 1.0f / atualizacoesPorSegundo);
     }
 
-    public void tickUpdateEntidadeInimiga(Entidade entidade, int index, float deltaTime) {
-        ((InimigoBasico) entidade).setOlharPara(naveAliada.getPosicao().cpy().add(naveAliada.getColisao().cpy().scl(0.5f)));
-        ((InimigoBasico) entidade).atirar(naveAliada);
+    public void tickUpdateEntidadeInimiga(Entidade entidade, int index) {
+        if (entidade instanceof Suporte) {
+            if (entidadesInimigas.get(0) instanceof Chefe) {
+                ((Suporte) entidade).setOlharPara(entidadesInimigas.get(0).getPosicao().cpy().add(entidadesInimigas.get(0).getColisao().cpy().scl(0.5f)));
+            }
+        } else {
+            ((Inimigo) entidade).setOlharPara(naveAliada.getPosicao().cpy().add(naveAliada.getColisao().cpy().scl(0.5f)));
+        }
+        ((Inimigo) entidade).atirar(naveAliada);
         this.tickUpdateEntidade(entidade, entidadesInimigas, index);
-        entidade.checarColisao(entidadesAliadas, deltaTime);
-        entidade.checarColisao(projeteisAliados, deltaTime);
+        entidade.checarColisao(entidadesAliadas, 1.0f / atualizacoesPorSegundo);
+        entidade.checarColisao(projeteisAliados, 1.0f / atualizacoesPorSegundo);
     }
 
     public void tickUpdateProjetil(Entidade entidade, Array<Entidade> projeteis, int index) {
         if (entidade.getPosicao().y > ALTURA_JOGO) {
             projeteis.removeIndex(index);
             return;
-        } else if (entidade.getPosicao().y < 0) {
+        } else if (entidade.getPosicao().y < 0 - entidade.getColisao().y) {
             projeteis.removeIndex(index);
             return;
         } else if (entidade.getPosicao().x > LARGURA_JOGO) {
             projeteis.removeIndex(index);
             return;
-        } else if (entidade.getPosicao().x < 0) {
+        } else if (entidade.getPosicao().x < 0 - entidade.getColisao().x) {
             projeteis.removeIndex(index);
             return;
         }
         this.tickUpdateEntidade(entidade, projeteis, index);
     }
 
-    public void tickUpdateProjetilAliado(Entidade entidade, int index, float deltaTime) {
+    public void tickUpdateProjetilAliado(Entidade entidade, int index) {
         this.tickUpdateProjetil(entidade, projeteisAliados, index);
-        entidade.checarColisao(entidadesInimigas, deltaTime);
+        entidade.checarColisao(entidadesInimigas, 1.0f / atualizacoesPorSegundo);
     }
 
-    public void tickUpdateProjetilInimigo(Entidade entidade, int index, float deltaTime) {
+    public void tickUpdateProjetilInimigo(Entidade entidade, int index) {
         this.tickUpdateProjetil(entidade, projeteisInimigos, index);
-        entidade.checarColisao(entidadesAliadas, deltaTime);
+        entidade.checarColisao(entidadesAliadas, 1.0f / atualizacoesPorSegundo);
     }
 
-    public void tickUpdate(Vector2 posicaoMouse, float deltaTime) {
+    public void tickUpdate(Vector2 posicaoMouse) {
         for (int i = 0; i < entidadesAliadas.size; i++) {
-            tickUpdateEntidadeAliada(entidadesAliadas.get(i), i, posicaoMouse, deltaTime);
+            tickUpdateEntidadeAliada(entidadesAliadas.get(i), i, posicaoMouse);
         }
         for (int i = 0; i < entidadesInimigas.size; i++) {
-            tickUpdateEntidadeInimiga(entidadesInimigas.get(i), i, deltaTime);
+            tickUpdateEntidadeInimiga(entidadesInimigas.get(i), i);
         }
         for (int i = 0; i < projeteisAliados.size; i++) {
-            tickUpdateProjetilAliado(projeteisAliados.get(i), i, deltaTime);
+            tickUpdateProjetilAliado(projeteisAliados.get(i), i);
         }
         for (int i = 0; i < projeteisInimigos.size; i++) {
-            tickUpdateProjetilInimigo(projeteisInimigos.get(i), i, deltaTime);
+            tickUpdateProjetilInimigo(projeteisInimigos.get(i), i);
         }
     }
 
     public void renderizarEntidade(Entidade entidade, Vector2 posicaoMouse) {
         final var posicao = entidade.getPosicao();
         if (posicao == null) return;
-        if (entidade.getImagem() != null) entidade.getImagem().setPosition(posicao.x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicao.y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
+        if (entidade.getImagem() != null)
+            entidade.getImagem().setPosition(posicao.x - entidade.getImagem().getWidth() / 2 + entidade.getColisao().x / 2, posicao.y - entidade.getImagem().getHeight() / 2 + entidade.getColisao().y / 2);
         Sprite armaSprite = null;
         Sprite armaEngineSprite = null;
         Sprite armaSuporteSprite = null;
@@ -389,7 +418,7 @@ public class Spaceunes extends ApplicationAdapter {
             trocarArmaDebug = true;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F4)) {
-            stepFrames = true;
+            stepFrames = !stepFrames;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F5)) {
             steppingFrame = true;
@@ -420,6 +449,7 @@ public class Spaceunes extends ApplicationAdapter {
         gameBatch.setProjectionMatrix(cameraDoJogo.combined);
         gameBatch.begin();
 
+        float TEMPO_ENTRE_RODADAS = 4f;
         switch (cenaAtual) {
             case MENU:
                 for (InterfaceGrafica interfaceGrafica : interfaceGraficasMenu) {
@@ -433,26 +463,73 @@ public class Spaceunes extends ApplicationAdapter {
 
                 while (tempoDesdeUltimaAtualizacao >= 1f / atualizacoesPorSegundo) {
                     if (!pausado && (!stepFrames || steppingFrame)) {
-                        tickUpdate(posicaoMouse, deltaTime);
+                        if (entidadesInimigas.size > 0 && entidadesInimigas.get(0) instanceof Chefe) {
+                            timerChefe += 1f / atualizacoesPorSegundo;
+                            if (rodada % RODADA_CHEFE == 0 && timerChefe >= 10f && !naveAliada.estaDestruido()) {
+                                timerChefe -= 10f;
+                                for (int i = 0; i < rodada / RODADA_CHEFE + 1; i++) {
+                                    switch (intercalarTiposInimigosChefe) {
+                                        case 0:
+                                            final var suporte = new Suporte((Chefe) entidadesInimigas.get(0), suporteInimigoSprite, new Vector2(entidadesInimigas.get(0).getPosicao().x - 14 + (entidadesInimigas.get(0).getColisao().x / 2) + MathUtils.random(-16, 16), entidadesInimigas.get(0).getPosicao().y + entidadesInimigas.get(0).getColisao().y / 2 + +MathUtils.random(-20, 20)), new Vector2(48, 48), 15, 100f, suporteInimigoDestruicaoSprites, 5f, 1000f, 900f);
+                                            entidadesInimigas.add(suporte);
+                                            break;
+                                        case 1:
+                                            final var bomber = new Bomber(naveAliada, bomberInimigoSprite, new Vector2(entidadesInimigas.get(0).getPosicao().x - 12 + (entidadesInimigas.get(0).getColisao().x / 2) + MathUtils.random(-12, 12), entidadesInimigas.get(0).getPosicao().y + entidadesInimigas.get(0).getColisao().y / 2 + +MathUtils.random(-4, 4)), new Vector2(24, 24), 25, 100f, bomberInimigoDestruicaoSprites, 3f, 600f, 700f);
+                                            entidadesInimigas.add(bomber);
+                                            break;
+                                        case 2:
+                                            final var combatente = new Combatente(inimigoBasicoSprite, new Vector2(entidadesInimigas.get(0).getPosicao().x - 12 + (entidadesInimigas.get(0).getColisao().x / 2) + MathUtils.random(-12, 12), entidadesInimigas.get(0).getPosicao().y + entidadesInimigas.get(0).getColisao().y / 2 + +MathUtils.random(-4, 4)), new Vector2(24, 24), 25, 100f, inimigoBasicoDestruicaoSprites, 0.1f, 1000f, 175f);
+                                            combatente.trocarArma(CriadorArmas.basica(combatente, projeteisInimigos));
+                                            entidadesInimigas.add(combatente);
+                                            break;
+                                    }
+                                }
+                                intercalarTiposInimigosChefe++;
+                                if (intercalarTiposInimigosChefe > 2) intercalarTiposInimigosChefe = 0;
+                            }
+                        }
+                        tickUpdate(posicaoMouse);
+                        if (!pausado && (!stepFrames || steppingFrame)) naveAliada.atualizarQuadro(deltaTime);
+                        for (Entidade entidade : entidadesInimigas) {
+                            entidade.atualizarQuadro(deltaTime);
+                        }
+                        for (Entidade entidade : projeteisAliados) {
+                            entidade.atualizarQuadro(deltaTime);
+                        }
+                        for (Entidade entidade : projeteisInimigos) {
+                            entidade.atualizarQuadro(deltaTime);
+                        }
+                        if (entidadesInimigas.size == 0 && !podeTrocarArma && !podeUpgrade) {
+                            tempoAtualEntreRodadas += 1f / atualizacoesPorSegundo;
+                        }
                         steppingFrame = false;
                     }
                     tempoDesdeUltimaAtualizacao -= 1f / atualizacoesPorSegundo;
                 }
 
-                if (!pausado) parteAtual += deltaTime * 10f;
+                if (!pausado && (!stepFrames || steppingFrame)) parteAtual += deltaTime * 10f;
                 interfaceGraficaFundo.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
 
                 if (entidadesInimigas.size == 0) {
                     podeTrocarArma = naveAliada.querendoTrocarArma();
-                    if (!podeTrocarArma) {
+                    podeUpgrade = naveAliada.querendoUpgrade();
+                    if (!podeTrocarArma && !podeUpgrade && tempoAtualEntreRodadas >= TEMPO_ENTRE_RODADAS) {
+                        tempoAtualEntreRodadas = 0f;
                         rodada++;
                         for (int i = 0; i < (rodada == 1 ? 1 : (rodada - 1) * 2); i++) {
-                            if (i % 2 == 0) {
-                                final var inimigo = new InimigoBasico(inimigoBasicoSprite, new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO - 96), new Vector2(24, 24), 25, 100f, inimigoBasicoDestruicaoSprites, 0.1f, 1000f, 1000f);
-                                inimigo.trocarArma(CriadorArmas.basica(inimigo, projeteisInimigos));
-                                entidadesInimigas.add(inimigo);
+                            if (rodada % RODADA_CHEFE == 0) {
+                                Chefe chefe = new Chefe(LARGURA_JOGO, ALTURA_JOGO, 500 + (rodada / RODADA_CHEFE) * 250);
+                                chefe.trocarArma(CriadorArmas.armaOnda(chefe, projeteisInimigos));
+                                entidadesInimigas.add(chefe);
+                                break;
                             } else {
-                                entidadesInimigas.add(new BomberInimigo(naveAliada, bomberInimigoSprite, new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO - 96), new Vector2(24, 24), 25, 100f, bomberInimigoDestruicaoSprites, 3f, 500f, 700f));
+                                if (i % 2 == 0) {
+                                    final var inimigo = new Combatente(inimigoBasicoSprite, new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO + MathUtils.random(24, 100)), new Vector2(24, 24), 25, 100f, inimigoBasicoDestruicaoSprites, 0.1f, 1000f, 175f);
+                                    inimigo.trocarArma(CriadorArmas.basica(inimigo, projeteisInimigos));
+                                    entidadesInimigas.add(inimigo);
+                                } else {
+                                    entidadesInimigas.add(new Bomber(naveAliada, bomberInimigoSprite, new Vector2(MathUtils.random(LARGURA_JOGO), ALTURA_JOGO + MathUtils.random(24, 100)), new Vector2(24, 24), 25, 100f, bomberInimigoDestruicaoSprites, 3f, 600f, 700f));
+                                }
                             }
                         }
                     }
@@ -460,52 +537,68 @@ public class Spaceunes extends ApplicationAdapter {
                 shapeRenderer.setProjectionMatrix(cameraDoJogo.combined);
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
-                naveAliada.atualizarQuadro(deltaTime);
                 renderizarEntidade(naveAliada, posicaoMouse);
                 var xInput = Gdx.input.isKeyPressed(Input.Keys.D) ? 1 : Gdx.input.isKeyPressed(Input.Keys.A) ? -1 : 0;
                 var yInput = Gdx.input.isKeyPressed(Input.Keys.W) ? 1 : Gdx.input.isKeyPressed(Input.Keys.S) ? -1 : 0;
-                if (!(podeTrocarArma && naveAliada.querendoTrocarArma())) {
+                if (!pausado && (!stepFrames || steppingFrame)) {
                     naveAliada.setMovimento(new Vector2(xInput, yInput));
                     if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
                         naveAliada.atirar(posicaoMouse);
                     }
                 }
                 for (Entidade entidade : entidadesInimigas) {
-                    if (!pausado) entidade.atualizarQuadro(deltaTime);
                     renderizarEntidade(entidade, posicaoMouse);
                 }
                 for (Entidade entidade : projeteisAliados) {
-                    if (!pausado) entidade.atualizarQuadro(deltaTime);
                     renderizarEntidade(entidade, posicaoMouse);
                 }
                 for (Entidade entidade : projeteisInimigos) {
-                    if (!pausado) entidade.atualizarQuadro(deltaTime);
                     renderizarEntidade(entidade, posicaoMouse);
                 }
-
 
                 fontePadrao.draw(gameBatch, "Vida: " + naveAliada.getVida(), 0, ALTURA_JOGO - 20);
                 fontePadrao.draw(gameBatch, "XP: " + naveAliada.getXp(), 0, ALTURA_JOGO - 60);
                 if (pausado) {
                     interfaceGraficaPausado.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                 }
-
+                if (entidadesInimigas.size == 0 && tempoAtualEntreRodadas < TEMPO_ENTRE_RODADAS && !podeTrocarArma) {
+                    fontePadrao.draw(gameBatch, "Rodada: " + (rodada < 10 ? "0" : "") + (rodada + 1), LARGURA_JOGO / 2.0f - 60, ALTURA_JOGO / 2.0f + 20);
+                }
                 if (naveAliada.estaCompletamenteDestruido()) {
                     interfaceGraficaGameOver.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                     interfaceGraficaPressioneParaContinuar.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                 } else {
-                    if ((trocarArmaDebug || (podeTrocarArma && naveAliada.querendoTrocarArma()))) {
+                    if (((podeTrocarArma && naveAliada.querendoTrocarArma()))) {
                         interfaceGraficaEscolherArmaFundo.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
                         fontePadrao.draw(gameBatch, "Escolha a arma: ", LARGURA_JOGO / 2.0f - 90, ALTURA_JOGO / 2.0f + 20);
                         for (int i = 0; i < armas.length; i++) {
-
                             if (armas[i].getArmaSprite() != null) armas[i].getArmaSprite().draw(gameBatch);
                             armas[i].getArmaEngineSprite().draw(gameBatch);
-                            gameBatch.draw(jogadorSprites[0], escolherArmaOffset + i*escolherArmaSeparar, escolherArmaY);
+                            gameBatch.draw(jogadorSprites[0], escolherArmaOffset + i * escolherArmaSeparar, escolherArmaY);
                             armas[i].getSuporteSprite().draw(gameBatch);
                             if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
                                 if (armas[i].getArmaSprite().getBoundingRectangle().contains(posicaoMouse)) {
                                     naveAliada.trocarArma(armas[i]);
+                                    trocarArmaDebug = false;
+                                }
+                            }
+                        }
+                    } else if (trocarArmaDebug || (podeUpgrade && naveAliada.querendoUpgrade())) {
+                        interfaceGraficaEscolherArmaFundo.renderizar(gameBatch, posicaoMouse, Gdx.input.isButtonPressed(Input.Buttons.LEFT));
+                        fontePadrao.draw(gameBatch, "Escolha o upgrade: ", LARGURA_JOGO / 2.0f - 90, ALTURA_JOGO / 2.0f + 20);
+                        fontePadrao.draw(gameBatch, "Upgrade de vida máxima +50 (atual: " + naveAliada.getVidaMaxima() + ")", LARGURA_JOGO / 2.0f - 225, ALTURA_JOGO / 2.0f - 20);
+                        fontePadrao.draw(gameBatch, "Upgrade de dano +2 (atual: " + naveAliada.getDano() + ")", LARGURA_JOGO / 2.0f - 225, ALTURA_JOGO / 2.0f - 60);
+                        fontePadrao.draw(gameBatch, "Diminuir tempo de recarga em 20% (atual: " + MathUtils.round(naveAliada.getTempoRecarga() * 100) + ")", LARGURA_JOGO / 2.0f - 225, ALTURA_JOGO / 2.0f - 100);
+                        if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+                            if (posicaoMouse.x > LARGURA_JOGO / 2.0f - 225 && posicaoMouse.x < LARGURA_JOGO / 2.0f + 225) {
+                                if (posicaoMouse.y > ALTURA_JOGO / 2.0f - 20 && posicaoMouse.y < ALTURA_JOGO / 2.0f) {
+                                    naveAliada.aumentarVidaMaxima(50);
+                                    trocarArmaDebug = false;
+                                } else if (posicaoMouse.y > ALTURA_JOGO / 2.0f - 60 && posicaoMouse.y < ALTURA_JOGO / 2.0f - 40) {
+                                    naveAliada.aumentarDano(2);
+                                    trocarArmaDebug = false;
+                                } else if (posicaoMouse.y > ALTURA_JOGO / 2.0f - 100 && posicaoMouse.y < ALTURA_JOGO / 2.0f - 80) {
+                                    naveAliada.diminuirTempoRecarga(0.2f);
                                     trocarArmaDebug = false;
                                 }
                             }

@@ -5,10 +5,11 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
-public class NaveAliada extends Nave implements Atirador {
+public class NaveAliada extends Nave {
     private int xp = 0;
     private int pontos = 0;
     private int nivel = 1;
+    private int nivelFezUpgrade = 2;
     private boolean trocouArma = false;
 
     public NaveAliada(Array<Entidade> entidades, Sprite[] imagens, Vector2 position, Vector2 hitbox, int vida, Sprite[] destruicao) {
@@ -49,8 +50,35 @@ public class NaveAliada extends Nave implements Atirador {
     }
 
     public boolean querendoTrocarArma() {
-//        return true;
         return !this.trocouArma && this.pontos > 0;
+    }
+
+    public boolean querendoUpgrade() {
+        return !this.querendoTrocarArma() && nivelFezUpgrade < this.nivel;
+    }
+
+    public void aumentarVidaMaxima(int vida) {
+        this.vidaMaxima += vida;
+        this.vida += vida;
+        this.nivelFezUpgrade = this.nivel;
+    }
+
+    public void aumentarDano(int dano) {
+        this.arma.aumentarDano(dano);
+        this.nivelFezUpgrade = this.nivel;
+    }
+
+    public void diminuirTempoRecarga(float cooldownPercentage) {
+        this.arma.diminuirTempoRecarga(cooldownPercentage);
+        this.nivelFezUpgrade = this.nivel;
+    }
+
+    public int getDano() {
+        return this.arma.getDano();
+    }
+
+    public float getTempoRecarga() {
+        return this.arma.getTempoRecarga();
     }
 
     @Override
@@ -68,11 +96,11 @@ public class NaveAliada extends Nave implements Atirador {
     }
 
     @Override
-    public void colidir(Entidade entidade, float deltaTime) {
-        super.colidir(entidade, deltaTime);
+    public void colidir(Entidade entidade, float physicsDeltaTime) {
+        super.colidir(entidade, physicsDeltaTime);
         if (estaDestruido()) return;
         if (entidade instanceof Projetil) return;
-        vida -= deltaTime * entidade.getColisaoDano();
+        vida -= physicsDeltaTime * entidade.getColisaoDano();
         if (estaDestruido()) {
             vida = 0;
             this.frameAtual = 0;

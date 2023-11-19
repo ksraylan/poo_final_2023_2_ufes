@@ -26,10 +26,17 @@ public class CriadorArmas {
 
     private final static Sprite[] BASICA_PROJETIL_SPRITES = new Sprite[]{new Sprite(BASICA_PROJETIL_TEXTURE, 0, 0, 4, 16), new Sprite(BASICA_PROJETIL_TEXTURE, 4, 0, 4, 16), new Sprite(BASICA_PROJETIL_TEXTURE, 8, 0, 4, 16), new Sprite(BASICA_PROJETIL_TEXTURE, 12, 0, 4, 16)};
 
-    private final static Sound BASICA_SOM = Gdx.audio.newSound(Gdx.files.internal("sounds/laserSmall_004.ogg"));
-
     public static Arma basica(Nave nave, Array<Entidade> projeteis) {
-        return new Arma(nave, projeteis, 0.5f, 5, 100, new Vector2(0, 0), BASICA_PROJETIL_SPRITES, new Vector2(8, 8), BASICA_SOM);
+        return new Arma(nave, projeteis, 0.5f, 5, 100, new Vector2(0, 0), BASICA_PROJETIL_SPRITES, new Vector2(8, 8), null);
+    }
+
+    private final static Texture ARMA_ONDA_PROJETIL_TEXTURE = new Texture("sprites/enemies/projectiles/wave.png");
+    // 6 sprites de 64x64
+    private final static Sprite[] ARMA_ONDA_PROJETIL_SPRITES = new Sprite[]{new Sprite(ARMA_ONDA_PROJETIL_TEXTURE, 0, 0, 64, 64), new Sprite(ARMA_ONDA_PROJETIL_TEXTURE, 64, 0, 64, 64), new Sprite(ARMA_ONDA_PROJETIL_TEXTURE, 128, 0, 64, 64), new Sprite(ARMA_ONDA_PROJETIL_TEXTURE, 192, 0, 64, 64), new Sprite(ARMA_ONDA_PROJETIL_TEXTURE, 256, 0, 64, 64), new Sprite(ARMA_ONDA_PROJETIL_TEXTURE, 320, 0, 64, 64)};
+    private final static Sound ARMA_ONDA_SOM = Gdx.audio.newSound(Gdx.files.internal("sounds/laserSmall_004.ogg"));
+
+    public static Arma armaOnda(Nave nave, Array<Entidade> projeteis) {
+        return new Arma(nave, projeteis, 1f, 12, 100, new Vector2(0, 0), ARMA_ONDA_PROJETIL_SPRITES, new Vector2(32, 32), ARMA_ONDA_SOM);
     }
 
 

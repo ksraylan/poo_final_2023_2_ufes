@@ -70,4 +70,13 @@ public abstract class Nave extends EntidadeDanificavel {
     public Arma getArma() {
         return arma;
     }
+
+    public void setRotacao(float rotacao) {
+        this.rotacao = rotacao;
+    }
+
+    public void curar(float cura) {
+        this.vida += cura;
+        if (this.vida > this.getVidaMaxima()) this.vida = this.getVidaMaxima();
+    }
 }

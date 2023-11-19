@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 
 public abstract class EntidadeDanificavel extends Entidade {
     protected float vida;
-    private float vidaMaxima;
+    protected float vidaMaxima;
     protected Sprite[] destruicao;
 
     public EntidadeDanificavel(Sprite imagem, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, float vida, Sprite[] destruicao) {
@@ -23,7 +23,7 @@ public abstract class EntidadeDanificavel extends Entidade {
     }
 
     @Override
-    public void colidir(Entidade entidade, float deltaTime) {
+    public void colidir(Entidade entidade, float physicsDeltaTime) {
         if (estaDestruido()) return;
         if (entidade instanceof Projetil) {
             vida -= ((Projetil) entidade).causarDano();
