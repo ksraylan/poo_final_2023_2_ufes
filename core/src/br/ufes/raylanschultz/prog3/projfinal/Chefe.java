@@ -39,8 +39,7 @@ public class Chefe extends Inimigo {
     }
 
     public void atirar(NaveAliada naveAliada) {
-        if (naveAliada.estaDestruido()) return;
-        arma.atirar();
+        if (!naveAliada.estaDestruido()) arma.atirar();
     }
 
     @Override

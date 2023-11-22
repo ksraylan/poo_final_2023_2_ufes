@@ -4,10 +4,11 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 
 public abstract class Nave extends EntidadeDanificavel {
-    private float rotacao;
     private final float velocidadeRotacao;
-    private Vector2 olharPara;
     protected Arma arma;
+    private float rotacao;
+    private Vector2 olharPara;
+
     public Nave(Sprite imagem, Vector2 posicao, Vector2 colisao, float atrito, float aceleracao, float velocidadeMaxima, float vida, float velocidadeRotacao, Sprite[] destruicao) {
         super(imagem, posicao, colisao, atrito, aceleracao, velocidadeMaxima, vida, destruicao);
         this.velocidadeRotacao = velocidadeRotacao;
@@ -59,8 +60,13 @@ public abstract class Nave extends EntidadeDanificavel {
 
         return diferenca;
     }
+
     public float getRotacao() {
         return rotacao;
+    }
+
+    public void setRotacao(float rotacao) {
+        this.rotacao = rotacao;
     }
 
     public void setOlharPara(Vector2 olharPara) {
@@ -71,12 +77,9 @@ public abstract class Nave extends EntidadeDanificavel {
         return arma;
     }
 
-    public void setRotacao(float rotacao) {
-        this.rotacao = rotacao;
-    }
-
     public void curar(float cura) {
         this.vida += cura;
+
         if (this.vida > this.getVidaMaxima()) this.vida = this.getVidaMaxima();
     }
 }

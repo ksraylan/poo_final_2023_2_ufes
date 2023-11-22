@@ -41,7 +41,7 @@ public class Pistola extends Arma {
 
     @Override
     public void liberar() {
-        if (quadroAtual < 6 && cooldownAtual <= 0) {
+        if (quadroAtual >= 1 && quadroAtual < 6) {
             final var position = nave.getPosicao().cpy().add(nave.getColisao().x / 2 - projetilHitbox.x / 2, nave.getColisao().y / 2 - projetilHitbox.x / 2).add(posicaoRelativa.cpy().rotateDeg(nave.getRotacao()));
             final var direcao = new Vector2(0, 1).rotateDeg(nave.getRotacao());
             projeteis.add(new Projetil(projetilSprites, position, direcao, ((float) velocidadeProjetil / 6) * (quadroAtual < 3 ? 3 : quadroAtual + 1), projetilHitbox, (dano / 6) * (quadroAtual + 1), 1, nave));
@@ -54,10 +54,12 @@ public class Pistola extends Arma {
     @Override
     public void atualizarFisica(float deltaTime) {
         if (quadroAtual > 0) {
-            quadroTemporizador += deltaTime;
-            if (quadroTemporizador > 0.1f) {
-                if (quadroAtual != 5)
-                    quadroAtual++;
+            quadroTemporizador += deltaTime / animacaoTempoMultiplicador;
+            while (quadroTemporizador > 0.1f) {
+                if (quadroAtual == 5) {
+                    liberar();
+                }
+                quadroAtual++;
 
                 if (quadroAtual >= armaSprites.length) {
                     quadroAtual = 0;
@@ -71,7 +73,6 @@ public class Pistola extends Arma {
 
     @Override
     public Sprite getArmaSprite() {
-        System.out.println(quadroAtual + " " + cooldownAtual);
         return armaSprites == null ? null : armaSprites[quadroAtual];
     }
 }

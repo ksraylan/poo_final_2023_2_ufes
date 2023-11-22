@@ -11,7 +11,7 @@ public class Botao extends InterfaceGrafica {
     private final Sprite normal;
     private final Sprite hover;
     private final Sprite pressionado;
-    
+
     public Botao(Rectangle colisao, Sprite normal, Sprite hover, Sprite pressionado) {
         this.colisao = colisao;
         this.normal = normal;

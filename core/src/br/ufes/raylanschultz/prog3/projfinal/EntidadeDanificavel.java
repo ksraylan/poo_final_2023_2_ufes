@@ -31,7 +31,7 @@ public abstract class EntidadeDanificavel extends Entidade {
                 vida = 0;
                 this.frameAtual = 0;
                 if (((Projetil) entidade).getAtirador() instanceof NaveAliada) {
-                    ((NaveAliada)((Projetil) entidade).getAtirador()).addXp(1);
+                    ((NaveAliada) ((Projetil) entidade).getAtirador()).addXp(1);
                 }
             }
         }
@@ -82,6 +82,7 @@ public abstract class EntidadeDanificavel extends Entidade {
     public float getColisaoDano() {
         return estaDestruido() ? 0 : super.getColisaoDano();
     }
+
     public void aplicarDanoDireto(float dano) {
         if (estaDestruido()) return;
         vida -= dano;

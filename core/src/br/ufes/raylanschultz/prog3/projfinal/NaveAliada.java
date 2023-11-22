@@ -18,8 +18,13 @@ public class NaveAliada extends Nave {
         arma = CriadorArmas.laser(this, entidades);
     }
 
+    private static double arredondar(double valor, int casas) {
+        double escala = Math.pow(10, casas);
+        return Math.round(valor * escala) / escala;
+    }
+
     public void atirar(Vector2 posicaoMouse) {
-        arma.atirar();
+        if (!this.estaDestruido()) arma.atirar();
     }
 
     @Override
@@ -63,6 +68,13 @@ public class NaveAliada extends Nave {
         this.nivelFezUpgrade = this.nivel;
     }
 
+    public void curar(int quantidade) {
+        this.vida += quantidade;
+        if (this.vida > this.vidaMaxima) {
+            this.vida = this.vidaMaxima;
+        }
+    }
+
     public void aumentarDano(int dano) {
         this.arma.aumentarDano(dano);
         this.nivelFezUpgrade = this.nivel;
@@ -73,7 +85,7 @@ public class NaveAliada extends Nave {
         this.nivelFezUpgrade = this.nivel;
     }
 
-    public int getDano() {
+    public float getDano() {
         return this.arma.getDano();
     }
 
@@ -91,8 +103,16 @@ public class NaveAliada extends Nave {
         return pontos;
     }
 
+    public int getNivel() {
+        return nivel;
+    }
+
     public int getXp() {
         return xp;
+    }
+
+    public String textoVida() {
+        return arredondar(this.getVida(), 1) + "/" + arredondar(this.getVidaMaxima(), 1);
     }
 
     @Override

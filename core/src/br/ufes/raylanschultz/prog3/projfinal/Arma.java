@@ -3,14 +3,10 @@ package br.ufes.raylanschultz.prog3.projfinal;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
 public class Arma {
-    protected float cooldown;
-    protected float cooldownAtual = 0;
-    protected int dano;
     protected final int velocidadeProjetil;
     protected final Vector2 posicaoRelativa;
     protected final Vector2 posicaoRelativaEngine;
@@ -22,12 +18,16 @@ public class Arma {
     protected final Sprite armaEngineSprite;
     protected final Sprite suporteSprite;
     protected final float somVolume;
+    protected float cooldown;
+    protected float cooldownAtual = 0;
+    protected float dano;
     protected Music somAlt;
     protected Nave nave;
     protected Array<Entidade> projeteis;
     protected int quadroAtual = 0;
+    protected float animacaoTempoMultiplicador = 1.0f;
 
-    public Arma(Nave nave, Array<Entidade> projeteis, float cooldown, int dano, int velocidadeProjetil, Vector2 posicaoRelativa, Sprite[] projetilSprites, Vector2 projetilHitbox, Sound som) {
+    public Arma(Nave nave, Array<Entidade> projeteis, float cooldown, float dano, int velocidadeProjetil, Vector2 posicaoRelativa, Sprite[] projetilSprites, Vector2 projetilHitbox, Sound som) {
         this.nave = nave;
         this.projeteis = projeteis;
         this.cooldown = cooldown;
@@ -100,12 +100,13 @@ public class Arma {
         if (som != null) som.play(somVolume);
         else if (somAlt != null && !somAlt.isPlaying()) somAlt.play();
         cooldownAtual += cooldown;
-        final var position = nave.getPosicao().cpy().add(nave.getColisao().x / 2 - projetilHitbox.x / 2 , nave.getColisao().y / 2 - projetilHitbox.x / 2).add(posicaoRelativa.cpy().rotateDeg(nave.getRotacao()));
+        final var position = nave.getPosicao().cpy().add(nave.getColisao().x / 2 - projetilHitbox.x / 2, nave.getColisao().y / 2 - projetilHitbox.x / 2).add(posicaoRelativa.cpy().rotateDeg(nave.getRotacao()));
         final var direcao = new Vector2(0, 1).rotateDeg(nave.getRotacao());
         projeteis.add(new Projetil(projetilSprites, position, direcao, velocidadeProjetil, projetilHitbox, dano, 1, nave));
     }
 
-    public void liberar() {}
+    public void liberar() {
+    }
 
     public void atualizarFisica(float deltaTime) {
         if (cooldownAtual > 0) {
@@ -141,7 +142,7 @@ public class Arma {
         this.dano += dano;
     }
 
-    public int getDano() {
+    public float getDano() {
         return dano;
     }
 
@@ -151,5 +152,6 @@ public class Arma {
 
     public void diminuirTempoRecarga(float cooldownPercentage) {
         this.cooldown *= 1.0f - cooldownPercentage;
+        this.animacaoTempoMultiplicador *= 1.0f - cooldownPercentage;
     }
 }
